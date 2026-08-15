@@ -168,6 +168,46 @@ th{color:#ddd}
 </form>
 
 {% elif pagina == 'clientes' %}
+<a class="botao" href="/cadastrar-cliente">➕ CADASTRAR CLIENTE</a>
+
+<div class="formulario">
+<form method="POST" action="/cadastrar-cliente">
+
+<label>Nome do cliente / produtor</label>
+<input type="text" name="nome" required>
+
+<label>Nome da granja / propriedade</label>
+<input type="text" name="granja">
+
+<label>CPF / CNPJ</label>
+<input type="text" name="cpf_cnpj">
+
+<label>Inscrição Estadual</label>
+<input type="text" name="inscricao_estadual">
+
+<label>Cidade</label>
+<input type="text" name="cidade">
+
+<label>Telefone / WhatsApp</label>
+<input type="text" name="telefone">
+
+<label>Endereço</label>
+<input type="text" name="endereco">
+
+<label>Tipo</label>
+<select name="tipo">
+<option value="Avicultura">Avicultura</option>
+<option value="Suinocultura">Suinocultura</option>
+<option value="Ambos">Ambos</option>
+</select>
+
+<label>Observações</label>
+<textarea name="observacoes"></textarea>
+
+<button>SALVAR CLIENTE</button>
+
+</form>
+</div>
 
 
 
@@ -276,6 +316,32 @@ def render(pagina, titulo, sucesso=False, **dados):
 @app.route("/")
 def inicio():
     return render("inicio", "Painel de Controle")
+
+@app.route("/cadastrar-cliente", methods=["GET","POST"])
+def cadastrar_cliente():
+    if request.method == "POST":
+        conn = conectar()
+        conn.execute("""
+            INSERT INTO clientes
+            (nome, granja, cidade, telefone, observacoes, data_cadastro,
+             cpf_cnpj, inscricao_estadual, endereco)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            request.form.get("nome", ""),
+            request.form.get("granja", ""),
+            request.form.get("cidade", ""),
+            request.form.get("telefone", ""),
+            request.form.get("observacoes", ""),
+            datetime.now().strftime("%d/%m/%Y"),
+            request.form.get("cpf_cnpj", ""),
+            request.form.get("inscricao_estadual", ""),
+            request.form.get("endereco", "")
+        ))
+        conn.commit()
+        conn.close()
+        return redirect("/relatorio/clientes")
+
+    return render("clientes", "Cadastrar Cliente")
 
 @app.route("/visita", methods=["GET","POST"])
 def visita():
