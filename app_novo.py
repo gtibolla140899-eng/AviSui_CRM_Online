@@ -1,4 +1,4 @@
-Ôªøfrom flask import Flask, request, redirect, render_template_string, send_file
+from flask import Flask, request, redirect, render_template_string, send_file
 import sqlite3
 from pathlib import Path
 from datetime import datetime
@@ -90,7 +90,7 @@ th{color:#ddd}
 <div class="container">
 
 {% if sucesso %}
-<div class="sucesso">‚úì Registro salvo com sucesso!</div>
+<div class="sucesso">? Registro salvo com sucesso!</div>
 {% endif %}
 
 <div class="card">
@@ -98,13 +98,13 @@ th{color:#ddd}
 
 {% if pagina == 'inicio' %}
 <div class="menu">
-<a href="/visita">üìù Registrar Visita</a>
-<a href="/combustivel">‚õΩ Combust√≠vel</a>
-<a href="/alimentacao">üçΩÔ∏è Alimenta√ß√£o</a>
-<a href="/relatorio/clientes">üë• Clientes Cadastrados</a>
-<a href="/relatorio/visitas">üìã Relat√≥rio Completo de Visitas</a>
-<a href="/relatorio/combustivel">‚õΩ Relat√≥rio de Combust√≠vel</a>
-<a href="/relatorio/alimentacao">üçΩÔ∏è Relat√≥rio de Alimenta√ß√£o</a>
+<a href="/visita">?? Registrar Visita</a>
+<a href="/combustivel">? CombustÌvel</a>
+<a href="/alimentacao">??? AlimentaÁ„o</a>
+<a href="/relatorio/clientes">?? Clientes Cadastrados</a>
+<a href="/relatorio/visitas">?? RelatÛrio Completo de Visitas</a>
+<a href="/relatorio/combustivel">? RelatÛrio de CombustÌvel</a>
+<a href="/relatorio/alimentacao">??? RelatÛrio de AlimentaÁ„o</a>
 </div>
 
 {% elif pagina == 'visita' %}
@@ -114,20 +114,15 @@ th{color:#ddd}
 <label>Vendedor</label>
 <input type="text" name="vendedor" value="Guilherme Tibolla">
 <label>Cliente</label>
-<select name="cliente" required>
-<option value="">Selecione o cliente</option>
-{% for c in clientes %}
-<option value="{{ c['nome'] }}">{{ c['nome'] }}</option>
-{% endfor %}
-</select>
+<input type="text" name="cliente" placeholder="Digite o nome do cliente" required>
 <label>Granja</label><input name="granja">
 <label>Cidade</label><input name="cidade">
-<label>Hora de sa√≠da</label><input type="time" name="hora_saida">
+<label>Hora de saÌda</label><input type="time" name="hora_saida">
 <label>Hora de chegada</label><input type="time" name="hora_chegada">
 <label>KM inicial</label><input type="number" step="0.1" name="km_inicial">
 <label>KM final</label><input type="number" step="0.1" name="km_final">
 <label>Atividade realizada</label><textarea name="atividade"></textarea>
-<label>Observa√ß√µes</label><textarea name="observacoes"></textarea>
+<label>ObservaÁıes</label><textarea name="observacoes"></textarea>
 <button>SALVAR VISITA</button>
 </form>
 
@@ -143,32 +138,32 @@ th{color:#ddd}
 <input type="text" name="cidade">
 <label>Litros</label>
 <input type="number" step="0.01" name="litros">
-<label>M√©dia</label>
+<label>MÈdia</label>
 <input type="number" step="0.01" name="media">
-<button>SALVAR COMBUST√çVEL</button>
+<button>SALVAR COMBUSTÕVEL</button>
 </form>
 
 {% elif pagina == 'alimentacao' %}
 <form method="POST" action="/alimentacao">
 <label>Data</label>
 <input type="text" name="data" value="{{ hoje }}" required>
-<label>N√∫mero do documento</label>
+<label>N˙mero do documento</label>
 <input type="text" name="documento">
-<label>Raz√£o social do fornecedor</label>
+<label>Raz„o social do fornecedor</label>
 <input type="text" name="razao_social">
-<label>Conta cont√°bil</label>
+<label>Conta cont·bil</label>
 <input type="text" name="conta_contabil">
 <label>Valor</label>
 <input type="number" step="0.01" name="valor">
 <label>Valor a mais</label>
 <input type="number" step="0.01" name="valor_a_mais">
-<label>Descri√ß√£o</label>
+<label>DescriÁ„o</label>
 <textarea name="descricao"></textarea>
-<button>SALVAR ALIMENTA√á√ÉO</button>
+<button>SALVAR ALIMENTA«√O</button>
 </form>
 
 {% elif pagina == 'clientes' %}
-<a class="botao" href="/cadastrar-cliente">‚ûï CADASTRAR CLIENTE</a>
+<a class="botao" href="/cadastrar-cliente">? CADASTRAR CLIENTE</a>
 
 <div class="formulario">
 <form method="POST" action="/cadastrar-cliente">
@@ -182,7 +177,7 @@ th{color:#ddd}
 <label>CPF / CNPJ</label>
 <input type="text" name="cpf_cnpj">
 
-<label>Inscri√ß√£o Estadual</label>
+<label>InscriÁ„o Estadual</label>
 <input type="text" name="inscricao_estadual">
 
 <label>Cidade</label>
@@ -191,7 +186,7 @@ th{color:#ddd}
 <label>Telefone / WhatsApp</label>
 <input type="text" name="telefone">
 
-<label>Endere√ßo</label>
+<label>EndereÁo</label>
 <input type="text" name="endereco">
 
 <label>Tipo</label>
@@ -201,7 +196,7 @@ th{color:#ddd}
 <option value="Ambos">Ambos</option>
 </select>
 
-<label>Observa√ß√µes</label>
+<label>ObservaÁıes</label>
 <textarea name="observacoes"></textarea>
 
 <button>SALVAR CLIENTE</button>
@@ -213,13 +208,13 @@ th{color:#ddd}
 
 {% if pagina == 'combustivel_rel' %}
 <a class="botao" href="/excel/combustivel?inicio={{ inicio }}&fim={{ fim }}" style="background:#217346">
-üìä GERAR EXCEL DE COMBUST√çVEL
+?? GERAR EXCEL DE COMBUSTÕVEL
 </a>
 {% endif %}
 
 {% if pagina == 'alimentacao_rel' %}
 <a class="botao" href="/excel/alimentacao?inicio={{ inicio }}&fim={{ fim }}" style="background:#217346">
-üìä GERAR EXCEL DE ALIMENTA√á√ÉO
+?? GERAR EXCEL DE ALIMENTA«√O
 </a>
 {% endif %}
 
@@ -246,19 +241,19 @@ th{color:#ddd}
 
 {% if pagina == 'visitas_rel' %}
 <a class="botao" href="/excel/visitas?inicio={{ inicio }}&fim={{ fim }}" style="background:#217346">
-üìä GERAR EXCEL DE VISITAS
+?? GERAR EXCEL DE VISITAS
 </a>
 {% endif %}
 
 {% if pagina == 'combustivel_rel' %}
 <a class="botao" href="/excel/combustivel?inicio={{ inicio }}&fim={{ fim }}" style="background:#217346">
-üìä GERAR EXCEL DE COMBUST√çVEL
+?? GERAR EXCEL DE COMBUSTÕVEL
 </a>
 {% endif %}
 
 {% if pagina == 'alimentacao_rel' %}
 <a class="botao" href="/excel/alimentacao?inicio={{ inicio }}&fim={{ fim }}" style="background:#217346">
-üìä GERAR EXCEL DE ALIMENTA√á√ÉO
+?? GERAR EXCEL DE ALIMENTA«√O
 </a>
 {% endif %}
 
@@ -266,7 +261,7 @@ th{color:#ddd}
 <table>
 
 {% if pagina == 'visitas_rel' %}
-<tr><th>Data</th><th>Vendedor</th><th>Cliente</th><th>Granja</th><th>Cidade</th><th>KM inicial</th><th>KM final</th><th>Atividade</th><th>Observa√ß√µes</th></tr>
+<tr><th>Data</th><th>Vendedor</th><th>Cliente</th><th>Granja</th><th>Cidade</th><th>KM inicial</th><th>KM final</th><th>Atividade</th><th>ObservaÁıes</th></tr>
 {% for r in registros %}
 <tr>
 <td>{{ r['data'] }}</td><td>{{ r['vendedor'] }}</td><td>{{ r['cliente'] }}</td>
@@ -277,13 +272,13 @@ th{color:#ddd}
 {% endfor %}
 
 {% elif pagina == 'combustivel_rel' %}
-<tr><th>Data</th><th>Quilometragem</th><th>Posto</th><th>Cidade</th><th>Litros</th><th>M√©dia</th></tr>
+<tr><th>Data</th><th>Quilometragem</th><th>Posto</th><th>Cidade</th><th>Litros</th><th>MÈdia</th></tr>
 {% for r in registros %}
 <tr><td>{{ r['data'] }}</td><td>{{ r['quilometragem'] }}</td><td>{{ r['posto'] }}</td><td>{{ r['cidade'] }}</td><td>{{ r['litros'] }}</td><td>{{ r['media'] }}</td></tr>
 {% endfor %}
 
 {% elif pagina == 'alimentacao_rel' %}
-<tr><th>Data</th><th>Documento</th><th>Raz√£o Social</th><th>Conta</th><th>Valor</th><th>Valor a mais</th><th>Descri√ß√£o</th></tr>
+<tr><th>Data</th><th>Documento</th><th>Raz„o Social</th><th>Conta</th><th>Valor</th><th>Valor a mais</th><th>DescriÁ„o</th></tr>
 {% for r in registros %}
 <tr><td>{{ r['data'] }}</td><td>{{ r['documento'] }}</td><td>{{ r['razao_social'] }}</td><td>{{ r['conta_contabil'] }}</td><td>{{ r['valor'] }}</td><td>{{ r['valor_a_mais'] }}</td><td>{{ r['descricao'] }}</td></tr>
 {% endfor %}
@@ -294,7 +289,7 @@ th{color:#ddd}
 {% endif %}
 
 {% if pagina != 'inicio' %}
-<a class="botao voltar" href="/">‚Üê VOLTAR AO PAINEL</a>
+<a class="botao voltar" href="/">? VOLTAR AO PAINEL</a>
 {% endif %}
 
 </div>
@@ -390,7 +385,7 @@ def combustivel():
         conn.commit()
         conn.close()
         return redirect("/combustivel?ok=1")
-    return render("combustivel","‚õΩ Registrar Combust√≠vel",sucesso=request.args.get("ok")=="1")
+    return render("combustivel","? Registrar CombustÌvel",sucesso=request.args.get("ok")=="1")
 
 @app.route("/alimentacao", methods=["GET","POST"])
 def alimentacao():
@@ -412,7 +407,7 @@ def alimentacao():
         conn.commit()
         conn.close()
         return redirect("/alimentacao?ok=1")
-    return render("alimentacao","üçΩÔ∏è Registrar Alimenta√ß√£o",sucesso=request.args.get("ok")=="1")
+    return render("alimentacao","??? Registrar AlimentaÁ„o",sucesso=request.args.get("ok")=="1")
 
 def periodo(tabela, inicio, fim):
     conn=conectar()
@@ -433,27 +428,27 @@ def rel_clientes():
     conn=conectar()
     registros=conn.execute("SELECT * FROM clientes ORDER BY nome").fetchall()
     conn.close()
-    return render("clientes","üë• Clientes Cadastrados",registros=registros)
+    return render("clientes","?? Clientes Cadastrados",registros=registros)
 
 @app.route("/relatorio/visitas")
 def rel_visitas():
     inicio=request.args.get("inicio","")
     fim=request.args.get("fim","")
-    return render("visitas_rel","üìã Relat√≥rio Completo de Visitas",
+    return render("visitas_rel","?? RelatÛrio Completo de Visitas",
                   registros=periodo("visitas",inicio,fim),inicio=inicio,fim=fim)
 
 @app.route("/relatorio/combustivel")
 def rel_combustivel():
     inicio=request.args.get("inicio","")
     fim=request.args.get("fim","")
-    return render("combustivel_rel","‚õΩ Relat√≥rio de Combust√≠vel",
+    return render("combustivel_rel","? RelatÛrio de CombustÌvel",
                   registros=periodo("combustivel",inicio,fim),inicio=inicio,fim=fim)
 
 @app.route("/relatorio/alimentacao")
 def rel_alimentacao():
     inicio=request.args.get("inicio","")
     fim=request.args.get("fim","")
-    return render("alimentacao_rel","üçΩÔ∏è Relat√≥rio de Alimenta√ß√£o",
+    return render("alimentacao_rel","??? RelatÛrio de AlimentaÁ„o",
                   registros=periodo("alimentacao",inicio,fim),inicio=inicio,fim=fim)
 
 
@@ -511,10 +506,10 @@ colunas_chaves = {
         "hora_saida","hora_chegada","km_inicial","km_final",
         "atividade","observacoes"
     ],
-    "Combust√≠vel": [
+    "CombustÌvel": [
         "data","quilometragem","posto","cidade","litros","media"
     ],
-    "Alimenta√ß√£o": [
+    "AlimentaÁ„o": [
         "data","documento","razao_social","conta_contabil",
         "valor","valor_a_mais","descricao"
     ]
@@ -533,8 +528,8 @@ def excel_visitas():
         "Visitas",
         [
             "Data","Vendedor","Cliente","Granja","Cidade",
-            "Hora sa√≠da","Hora chegada","KM inicial","KM final",
-            "Atividade","Observa√ß√µes"
+            "Hora saÌda","Hora chegada","KM inicial","KM final",
+            "Atividade","ObservaÁıes"
         ],
         registros,
         "AviSui_Relatorio_Visitas.xlsx"
@@ -550,10 +545,10 @@ def excel_combustivel():
     registros = buscar_excel("combustivel", inicio, fim)
 
     return criar_excel(
-        "Combust√≠vel",
+        "CombustÌvel",
         [
             "Data","Quilometragem","Posto","Cidade",
-            "Litros","M√©dia"
+            "Litros","MÈdia"
         ],
         registros,
         "AviSui_Relatorio_Combustivel.xlsx"
@@ -569,10 +564,10 @@ def excel_alimentacao():
     registros = buscar_excel("alimentacao", inicio, fim)
 
     return criar_excel(
-        "Alimenta√ß√£o",
+        "AlimentaÁ„o",
         [
-            "Data","Documento","Raz√£o Social","Conta Cont√°bil",
-            "Valor","Valor a mais","Descri√ß√£o"
+            "Data","Documento","Raz„o Social","Conta Cont·bil",
+            "Valor","Valor a mais","DescriÁ„o"
         ],
         registros,
         "AviSui_Relatorio_Alimentacao.xlsx"
@@ -583,3 +578,4 @@ if __name__=="__main__":
     print("Acesse no computador: http://127.0.0.1:5000")
     print("Para celular na mesma rede: http://IP-DO-COMPUTADOR:5000")
     app.run(host="0.0.0.0",port=5000,debug=False)
+
