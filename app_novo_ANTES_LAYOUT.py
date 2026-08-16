@@ -80,23 +80,7 @@ th{color:#ddd}
 .total{font-size:18px;font-weight:bold;margin:15px 0}
 </style>
 </head>
-<style>
-:root{--red:#ed1b2f;--dark:#07080a;--panel:#111318;--panel2:#181a20;--line:#292d35}
-*{box-sizing:border-box}
-body{margin:0!important;background:radial-gradient(circle at 10% 0%,rgba(237,27,47,.15),transparent 30%),radial-gradient(circle at 90% 100%,rgba(237,27,47,.07),transparent 30%),#07080a!important;color:#f5f5f5!important;font-family:Segoe UI,Arial,sans-serif!important}
-body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.045;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400'%3E%3Cg fill='none' stroke='white' stroke-width='3'%3E%3Cpath d='M70 260c-20-40 10-80 50-80 20 0 38 10 48 28 18-40 72-40 94-3 22 38-8 78-50 78H70z'/%3E%3Ccircle cx='180' cy='205' r='5' fill='white'/%3E%3Cpath d='M390 270c-55 0-88-28-88-66s34-65 78-65c45 0 84 27 84 65s-28 66-74 66z'/%3E%3Ccircle cx='412' cy='175' r='5' fill='white'/%3E%3Cpath d='M464 198l28 14-28 15z'/%3E%3C/g%3E%3C/svg%3E");background-size:600px 400px;z-index:-1}
-header,.header,nav,.navbar{background:rgba(7,8,10,.96)!important;border-bottom:1px solid rgba(237,27,47,.5)!important;box-shadow:0 10px 35px rgba(0,0,0,.45)!important}
-.container,.content,main{position:relative;z-index:1}
-.card,.panel,.box,.module,.dashboard-card{background:linear-gradient(145deg,#181a20,#0e0f13)!important;border:1px solid var(--line)!important;border-radius:16px!important;box-shadow:0 15px 40px rgba(0,0,0,.35)!important}
-button,.btn,input[type=submit]{background:linear-gradient(135deg,#ed1b2f,#b80d20)!important;color:white!important;border:0!important;border-radius:10px!important;padding:11px 18px!important;font-weight:700!important;box-shadow:0 8px 22px rgba(237,27,47,.22)!important}
-input,select,textarea{background:#0c0e12!important;color:white!important;border:1px solid #30343d!important;border-radius:9px!important;padding:10px!important}
-table{background:#111318!important;color:#eee!important;border:1px solid #292d35!important}
-th{background:#1b1e24!important;color:white!important;border-bottom:2px solid #ed1b2f!important}
-td{border-color:#292d35!important}
-a{color:#fff!important}
-a:hover{color:#ff3b4d!important}
-h1,h2,h3,h4{color:white!important}
-</style><body>
+<body>
 
 <div class="header">
 <div class="logo">AviSui CRM</div>
@@ -1561,4 +1545,3 @@ if __name__=="__main__":
     print("Acesse no computador: http://127.0.0.1:5000")
     print("Para celular na mesma rede: http://IP-DO-COMPUTADOR:5000")
     app.run(host="0.0.0.0",port=5000,debug=False)
-
