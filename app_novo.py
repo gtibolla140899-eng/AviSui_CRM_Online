@@ -697,6 +697,292 @@ if(document.readyState==="loading"){
 </script>
 <!-- FIM AVISUI VOZ FINAL -->
 
+
+<!-- AVISUI VOZ DEFINITIVO -->
+<script>
+function avisuiNormalizar(t){
+    return String(t).toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g,"")
+    .replace(/?/g,"c");
+}
+
+function avisuiCampo(nome,valor){
+    var campo=document.querySelector('[name="'+nome+'"]');
+
+    if(!campo) return;
+
+    valor=String(valor).trim();
+
+    if(!valor) return;
+
+    campo.value=valor;
+
+    campo.dispatchEvent(
+        new Event("input",{bubbles:true})
+    );
+
+    campo.dispatchEvent(
+        new Event("change",{bubbles:true})
+    );
+}
+
+function avisuiHora(v){
+
+    var s=avisuiNormalizar(v);
+
+    var numeros=s.match(/\d+/g);
+
+    if(!numeros) return v;
+
+    var h=parseInt(numeros[0]);
+
+    var m=numeros.length>1
+        ?parseInt(numeros[1])
+        :0;
+
+    if(h>23) return v;
+
+    if(m>59) m=0;
+
+    return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");
+}
+
+function avisuiNumero(v){
+
+    var s=avisuiNormalizar(v);
+
+    var mapa={
+        "zero":"0",
+        "um":"1",
+        "uma":"1",
+        "dois":"2",
+        "duas":"2",
+        "tres":"3",
+        "quatro":"4",
+        "cinco":"5",
+        "seis":"6",
+        "sete":"7",
+        "oito":"8",
+        "nove":"9",
+        "dez":"10"
+    };
+
+    Object.keys(mapa).forEach(function(k){
+
+        s=s.replace(
+            new RegExp("\\b"+k+"\\b","g"),
+            mapa[k]
+        );
+
+    });
+
+    var n=s.match(/\d+(?:[.,]\d+)?/);
+
+    return n
+        ?n[0].replace(",",".")
+        :v;
+}
+
+function avisuiIniciarVoz(){
+
+    var Speech=
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
+
+    if(!Speech){
+
+        alert(
+            "O comando de voz precisa ser usado no Google Chrome."
+        );
+
+        return;
+    }
+
+    var botao=
+        document.getElementById("avisui-voz-btn");
+
+    var reconhecimento=
+        new Speech();
+
+    reconhecimento.lang="pt-BR";
+    reconhecimento.continuous=false;
+    reconhecimento.interimResults=false;
+    reconhecimento.maxAlternatives=1;
+
+    reconhecimento.onstart=function(){
+
+        if(botao){
+
+            botao.innerText="OUVINDO...";
+
+            botao.style.background="#555";
+
+        }
+    };
+
+    reconhecimento.onend=function(){
+
+        if(botao){
+
+            botao.innerText="COMANDO DE VOZ";
+
+            botao.style.background="#b00000";
+
+        }
+    };
+
+    reconhecimento.onerror=function(){
+
+        if(botao){
+
+            botao.innerText="COMANDO DE VOZ";
+
+            botao.style.background="#b00000";
+
+        }
+
+        alert(
+            "Nao consegui entender. Toque novamente e fale as informacoes."
+        );
+    };
+
+    reconhecimento.onresult=function(event){
+
+        var frase=
+            event.results[0][0].transcript.trim();
+
+        var normalizada=
+            avisuiNormalizar(frase);
+
+        var campos=[
+
+            ["hora de saida","hora_saida"],
+
+            ["hora saida","hora_saida"],
+
+            ["saida","hora_saida"],
+
+            ["hora de chegada","hora_chegada"],
+
+            ["hora chegada","hora_chegada"],
+
+            ["chegada","hora_chegada"],
+
+            ["km inicial","km_inicial"],
+
+            ["quilometragem inicial","km_inicial"],
+
+            ["quilometro inicial","km_inicial"],
+
+            ["km final","km_final"],
+
+            ["quilometragem final","km_final"],
+
+            ["quilometro final","km_final"],
+
+            ["atividade realizada","atividade"],
+
+            ["atividade","atividade"],
+
+            ["observacoes","observacoes"],
+
+            ["observacao","observacoes"],
+
+            ["cliente","cliente"],
+
+            ["granja","granja"],
+
+            ["cidade","cidade"]
+
+        ];
+
+        var encontrados=[];
+
+        campos.forEach(function(item){
+
+            var pos=
+                normalizada.indexOf(item[0]);
+
+            if(pos>=0){
+
+                encontrados.push({
+
+                    pos:pos,
+
+                    fim:
+                        pos+item[0].length,
+
+                    campo:item[1]
+
+                });
+
+            }
+
+        });
+
+        encontrados.sort(function(a,b){
+
+            return a.pos-b.pos;
+
+        });
+
+        if(encontrados.length===0){
+
+            alert(
+                "Fale usando os nomes dos campos. Exemplo: cliente, granja, cidade, hora de saida..."
+            );
+
+            return;
+        }
+
+        encontrados.forEach(function(item,index){
+
+            var finalTexto=
+                index+1<encontrados.length
+                ?encontrados[index+1].pos
+                :frase.length;
+
+            var valor=
+                frase
+                .substring(item.fim,finalTexto)
+                .replace(/^[\s,:;-]+/,"")
+                .replace(/[\s,:;-]+$/,"")
+                .trim();
+
+            if(!valor) return;
+
+            if(
+                item.campo==="hora_saida" ||
+                item.campo==="hora_chegada"
+            ){
+
+                valor=avisuiHora(valor);
+
+            }
+
+            if(
+                item.campo==="km_inicial" ||
+                item.campo==="km_final"
+            ){
+
+                valor=avisuiNumero(valor);
+
+            }
+
+            avisuiCampo(
+                item.campo,
+                valor
+            );
+
+        });
+
+    };
+
+    reconhecimento.start();
+}
+</script>
+<!-- FIM AVISUI VOZ DEFINITIVO -->
 </body>
 </html>
 """
