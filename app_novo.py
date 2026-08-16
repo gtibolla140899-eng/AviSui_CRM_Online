@@ -303,34 +303,67 @@ th{color:#ddd}
 <script>
 (function(){
 
-function normalizar(txt){
-    return txt
-    .toLowerCase()
-    .replace(/[?????]/g,"a")
-    .replace(/[????]/g,"e")
-    .replace(/[????]/g,"i")
-    .replace(/[?????]/g,"o")
-    .replace(/[????]/g,"u")
-    .replace(/?/g,"c")
-    .trim();
-}
-
-function preencher(campo,valor){
-    var el=document.querySelector('[name="'+campo+'"]');
-
+function preencher(campo, valor){
+    var el = document.querySelector('[name="' + campo + '"]');
     if(el && valor){
-        el.value=valor.trim();
+        el.value = valor.trim();
         el.dispatchEvent(new Event("input",{bubbles:true}));
         el.dispatchEvent(new Event("change",{bubbles:true}));
     }
 }
 
-function iniciarVoz(){
+function normalizar(t){
+    return t.toLowerCase()
+    .replace(/[?????]/g,"a")
+    .replace(/[????]/g,"e")
+    .replace(/[????]/g,"i")
+    .replace(/[?????]/g,"o")
+    .replace(/[????]/g,"u")
+    .replace(/?/g,"c");
+}
 
-    var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+function hora(v){
+    var s=normalizar(v);
+    var m=s.match(/(\d{1,2})\s*(?:e|:)\s*(\d{1,2})?/);
+
+    if(!m) return v.trim();
+
+    var h=parseInt(m[1]);
+    var min=m[2] ? parseInt(m[2]) : 0;
+
+    if(h>23 || min>59) return v.trim();
+
+    return String(h).padStart(2,"0")+":"+
+           String(min).padStart(2,"0");
+}
+
+function numero(v){
+    var s=normalizar(v);
+
+    var mapa={
+        "zero":"0","um":"1","uma":"1",
+        "dois":"2","duas":"2","tres":"3",
+        "quatro":"4","cinco":"5","seis":"6",
+        "sete":"7","oito":"8","nove":"9",
+        "dez":"10"
+    };
+
+    Object.keys(mapa).forEach(function(k){
+        s=s.replace(new RegExp("\\b"+k+"\\b","g"),mapa[k]);
+    });
+
+    var m=s.match(/[0-9]+(?:[.,][0-9]+)?/);
+
+    return m ? m[0].replace(",",".") : v.trim();
+}
+
+function ouvir(){
+
+    var SR=window.SpeechRecognition ||
+           window.webkitSpeechRecognition;
 
     if(!SR){
-        alert("Use o Google Chrome para utilizar o comando de voz.");
+        alert("Abra o AviSui pelo Google Chrome e permita o microfone.");
         return;
     }
 
@@ -339,9 +372,8 @@ function iniciarVoz(){
     var r=new SR();
 
     r.lang="pt-BR";
-    r.interimResults=false;
     r.continuous=false;
-    r.maxAlternatives=3;
+    r.interimResults=false;
 
     r.onstart=function(){
         bot.innerText="OUVINDO...";
@@ -349,48 +381,43 @@ function iniciarVoz(){
 
     r.onerror=function(){
         bot.innerText="COMANDO DE VOZ";
-        alert("Nao consegui entender o comando. Toque novamente e fale com calma.");
+        alert("Nao consegui entender. Tente novamente.");
     };
 
     r.onend=function(){
         bot.innerText="COMANDO DE VOZ";
     };
 
-    r.onresult=function(event){
+    r.onresult=function(e){
 
-        var texto=event.results[0][0].transcript.trim();
+        var original=e.results[0][0].transcript.trim();
+        var texto=normalizar(original);
 
-        var original=texto;
-        var t=normalizar(texto);
-
-        var marcadores=[
-            "cliente",
-            "granja",
-            "cidade",
-            "hora de saida",
-            "hora de chegada",
-            "km inicial",
-            "km final",
-            "quilometragem inicial",
-            "quilometragem final",
-            "atividade",
-            "observacao",
-            "observacoes"
+        var campos=[
+            ["hora de saida","hora_saida"],
+            ["hora de chegada","hora_chegada"],
+            ["km inicial","km_inicial"],
+            ["km final","km_final"],
+            ["atividade realizada","atividade"],
+            ["observacoes","observacoes"],
+            ["observacao","observacoes"],
+            ["cliente","cliente"],
+            ["granja","granja"],
+            ["cidade","cidade"]
         ];
 
         var encontrados=[];
 
-        marcadores.forEach(function(m){
+        campos.forEach(function(c){
 
-            var pos=t.indexOf(m);
+            var pos=texto.indexOf(c[0]);
 
             if(pos>=0){
-
                 encontrados.push({
-                    nome:m,
-                    pos:pos
+                    pos:pos,
+                    fim:pos+c[0].length,
+                    campo:c[1]
                 });
-
             }
 
         });
@@ -400,162 +427,48 @@ function iniciarVoz(){
         });
 
         if(encontrados.length===0){
-
             preencher("cliente",original);
-
             return;
         }
 
-        encontrados.forEach(function(item,index){
+        encontrados.forEach(function(item,i){
 
-            var inicioValor=item.pos+item.nome.length;
+            var fim=i+1<encontrados.length
+                ? encontrados[i+1].pos
+                : original.length;
 
-            var fimValor=t.length;
-
-            if(index+1<encontrados.length){
-                fimValor=encontrados[index+1].pos;
-            }
-
-            var valor=original.substring(inicioValor,fimValor);
-
-            valor=valor
+            var valor=original
+                .substring(item.fim,fim)
                 .replace(/^[\s,:;-]+/,"")
                 .replace(/[\s,:;-]+$/,"")
                 .trim();
 
-            var campo=null;
+            if(!valor) return;
 
-            if(item.nome==="cliente"){
-                campo="cliente";
+            if(item.campo==="hora_saida" ||
+               item.campo==="hora_chegada"){
+                valor=hora(valor);
             }
 
-            else if(item.nome==="granja"){
-                campo="granja";
+            if(item.campo==="km_inicial" ||
+               item.campo==="km_final"){
+                valor=numero(valor);
             }
 
-            else if(item.nome==="cidade"){
-                campo="cidade";
-            }
-
-            else if(item.nome==="hora de saida"){
-                campo="hora_saida";
-            }
-
-            else if(item.nome==="hora de chegada"){
-                campo="hora_chegada";
-            }
-
-            else if(item.nome==="km inicial" || item.nome==="quilometragem inicial"){
-                campo="km_inicial";
-            }
-
-            else if(item.nome==="km final" || item.nome==="quilometragem final"){
-                campo="km_final";
-            }
-
-            else if(item.nome==="atividade"){
-                campo="atividade";
-            }
-
-            else if(item.nome==="observacao" || item.nome==="observacoes"){
-                campo="observacoes";
-            }
-
-            if(campo){
-
-                if(campo==="hora_saida" || campo==="hora_chegada"){
-
-                    var h=converterHora(valor);
-
-                    if(h){
-                        valor=h;
-                    }
-
-                }
-
-                if(campo==="km_inicial" || campo==="km_final"){
-
-                    valor=converterNumero(valor);
-
-                }
-
-                preencher(campo,valor);
-
-            }
-
+            preencher(item.campo,valor);
         });
-
     };
 
     r.start();
 }
 
-
-function converterNumero(valor){
-
-    var t=normalizar(valor);
-
-    var numeros={
-        "zero":"0",
-        "um":"1",
-        "dois":"2",
-        "tres":"3",
-        "quatro":"4",
-        "cinco":"5",
-        "seis":"6",
-        "sete":"7",
-        "oito":"8",
-        "nove":"9",
-        "dez":"10"
-    };
-
-    Object.keys(numeros).forEach(function(n){
-        t=t.replace(new RegExp("\\b"+n+"\\b","g"),numeros[n]);
-    });
-
-    var encontrado=t.match(/[0-9]+([.,][0-9]+)?/);
-
-    if(encontrado){
-        return encontrado[0].replace(",",".");
-    }
-
-    return valor;
-}
-
-
-function converterHora(valor){
-
-    var t=normalizar(valor);
-
-    var h=t.match(/([0-9]{1,2})\s*(?:e|:)?\s*([0-9]{1,2})?/);
-
-    if(!h){
-        return valor;
-    }
-
-    var hora=parseInt(h[1]);
-
-    var minuto=h[2] ? parseInt(h[2]) : 0;
-
-    if(hora>23 || minuto>59){
-        return valor;
-    }
-
-    return String(hora).padStart(2,"0")+":"+String(minuto).padStart(2,"0");
-}
-
-
 function instalar(){
 
     var form=document.querySelector('form[action="/visita"]');
 
-    if(!form){
-        return;
-    }
+    if(!form) return;
 
-    if(document.getElementById("avisui-voz-btn")){
-        return;
-    }
+    if(document.getElementById("avisui-voz-btn")) return;
 
     var bot=document.createElement("button");
 
@@ -564,27 +477,24 @@ function instalar(){
     bot.innerText="COMANDO DE VOZ";
 
     bot.style.cssText=
-    "display:block;width:100%;margin:12px 0;padding:14px;background:#b00000;color:white;border:0;border-radius:8px;font-size:16px;font-weight:bold;";
+        "display:block;width:100%;margin:12px 0;" +
+        "padding:14px;background:#b00000;color:white;" +
+        "border:0;border-radius:8px;" +
+        "font-size:16px;font-weight:bold;";
 
-    bot.onclick=iniciarVoz;
+    bot.onclick=ouvir;
 
     form.insertBefore(bot,form.firstChild);
 }
 
-
 if(document.readyState==="loading"){
-
     document.addEventListener("DOMContentLoaded",instalar);
-
 }else{
-
     instalar();
-
 }
 
 })();
 </script>
-
 </body>
 </html>
 """
