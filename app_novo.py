@@ -309,9 +309,9 @@ var r=new SR();
 r.lang="pt-BR";
 r.interimResults=false;
 r.continuous=false;
-r.onstart=function(){document.getElementById("avisui-voz-btn").innerText="??? OUVINDO...";};
-r.onend=function(){document.getElementById("avisui-voz-btn").innerText="?? COMANDO DE VOZ";};
-r.onerror=function(){document.getElementById("avisui-voz-btn").innerText="?? COMANDO DE VOZ";};
+r.onstart=function(){document.getElementById("avisui-voz-btn").innerText="?OUVINDO...";};
+r.onend=function(){document.getElementById("avisui-voz-btn").innerText="COMANDO DE VOZ";};
+r.onerror=function(){document.getElementById("avisui-voz-btn").innerText="COMANDO DE VOZ";};
 r.onresult=function(e){
 var t=e.results[0][0].transcript.toLowerCase().trim();
 var mapa=[
@@ -347,7 +347,7 @@ if(!form||document.getElementById("avisui-voz-btn"))return;
 var b=document.createElement("button");
 b.type="button";
 b.id="avisui-voz-btn";
-b.innerText="?? COMANDO DE VOZ";
+b.innerText="COMANDO DE VOZ";
 b.style.cssText="display:block;width:100%;margin:12px 0;padding:14px;background:#b00000;color:white;border:0;border-radius:8px;font-size:16px;font-weight:bold;";
 b.onclick=iniciarVoz;
 form.insertBefore(b,form.firstChild);
