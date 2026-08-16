@@ -1277,7 +1277,7 @@ function avisuiComandoVoz(){
 
 </script>
 <!-- FIM AVI SUI VOZ -->
-</body>
+<script>document.addEventListener('DOMContentLoaded',()=>{const b=[...document.querySelectorAll('button')].find(x=>/voz|microfone/i.test(x.innerText));if(!b||!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){return}const R=window.SpeechRecognition||window.webkitSpeechRecognition;r=new R();r.lang='pt-BR';r.continuous=false;r.interimResults=false;b.addEventListener('click',()=>{r.start();b.innerText='🎤 Ouvindo...'});r.onresult=e=>{const t=e.results[0][0].transcript.toLowerCase();const f=[...document.querySelectorAll('input,textarea,select')];const mapa=[['cliente','cliente'],['granja','granja'],['cidade','cidade'],['saída','saida'],['saida','saida'],['chegada','chegada'],['quilometragem inicial','km'],['quilometragem final','km'],['atividade','atividade']];mapa.forEach(([k,n])=>{let z=t.indexOf(k);if(z>=0){let v=t.substring(z+k.length).split(',')[0].trim();let el=f.find(x=>(x.name||x.id||'').toLowerCase().includes(n));if(el){el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}))}}});b.innerText='🎤 Comando de voz'};r.onerror=()=>b.innerText='🎤 Comando de voz';r.onend=()=>b.innerText='🎤 Comando de voz'});</script></body>
 </html>
 """
 
