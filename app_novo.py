@@ -109,6 +109,13 @@ th{color:#ddd}
 
 {% elif pagina == 'visita' %}
 <form method="POST" action="/visita">
+<button type="button"
+id="avisui-voz-btn"
+onclick="avisuiComandoVoz()"
+style="width:100%;margin:12px 0;padding:15px;background:#c9151d;color:white;border:0;border-radius:10px;font-size:17px;font-weight:bold;cursor:pointer;">
+COMANDO DE VOZ
+</button>
+
 <label>Data</label>
 <input type="text" name="data" value="{{ hoje }}" required>
 <label>Vendedor</label>
@@ -983,6 +990,277 @@ function avisuiIniciarVoz(){
 }
 </script>
 <!-- FIM AVISUI VOZ DEFINITIVO -->
+
+<!-- AVI SUI VOZ -->
+<script>
+
+function avisuiNormalizar(t){
+    return String(t)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g,"")
+    .replace(/?/g,"c");
+}
+
+function avisuiPreencher(nome,valor){
+
+    var campo=document.querySelector('[name="'+nome+'"]');
+
+    if(!campo) return;
+
+    valor=String(valor).trim();
+
+    if(valor==="") return;
+
+    campo.value=valor;
+
+    campo.dispatchEvent(
+        new Event("input",{bubbles:true})
+    );
+
+    campo.dispatchEvent(
+        new Event("change",{bubbles:true})
+    );
+}
+
+function avisuiNumero(v){
+
+    var s=avisuiNormalizar(v);
+
+    var mapa={
+        "zero":"0",
+        "um":"1",
+        "uma":"1",
+        "dois":"2",
+        "duas":"2",
+        "tres":"3",
+        "quatro":"4",
+        "cinco":"5",
+        "seis":"6",
+        "sete":"7",
+        "oito":"8",
+        "nove":"9",
+        "dez":"10",
+        "onze":"11",
+        "doze":"12",
+        "treze":"13",
+        "quatorze":"14",
+        "quinze":"15",
+        "dezesseis":"16",
+        "dezessete":"17",
+        "dezoito":"18",
+        "dezenove":"19",
+        "vinte":"20"
+    };
+
+    Object.keys(mapa).forEach(function(k){
+        s=s.replace(
+            new RegExp("\\b"+k+"\\b","g"),
+            mapa[k]
+        );
+    });
+
+    var n=s.match(/[0-9]+(?:[.,][0-9]+)?/);
+
+    if(!n) return v.trim();
+
+    return n[0].replace(",",".");
+}
+
+function avisuiHora(v){
+
+    var s=avisuiNormalizar(v);
+
+    var n=s.match(/\d+/g);
+
+    if(!n) return v.trim();
+
+    var h=parseInt(n[0],10);
+    var m=n.length>1 ? parseInt(n[1],10) : 0;
+
+    if(h>23) return v.trim();
+
+    if(m>59) m=0;
+
+    return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");
+}
+
+function avisuiComandoVoz(){
+
+    var Reconhecimento=
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
+
+    if(!Reconhecimento){
+
+        alert(
+            "O comando de voz precisa ser usado no Google Chrome."
+        );
+
+        return;
+    }
+
+    var botao=
+        document.getElementById("avisui-voz-btn");
+
+    var r=new Reconhecimento();
+
+    r.lang="pt-BR";
+    r.continuous=false;
+    r.interimResults=false;
+    r.maxAlternatives=1;
+
+    r.onstart=function(){
+
+        botao.innerText="OUVINDO...";
+        botao.style.background="#555";
+    };
+
+    r.onend=function(){
+
+        botao.innerText="COMANDO DE VOZ";
+        botao.style.background="#c9151d";
+    };
+
+    r.onerror=function(){
+
+        botao.innerText="COMANDO DE VOZ";
+        botao.style.background="#c9151d";
+
+        alert(
+            "Nao consegui entender. Toque novamente e fale as informacoes."
+        );
+    };
+
+    r.onresult=function(event){
+
+        var frase=
+            event.results[0][0].transcript.trim();
+
+        var texto=
+            avisuiNormalizar(frase);
+
+        var campos=[
+
+            ["vendedor","vendedor"],
+
+            ["cliente","cliente"],
+
+            ["granja","granja"],
+
+            ["cidade","cidade"],
+
+            ["hora de saida","hora_saida"],
+
+            ["hora saida","hora_saida"],
+
+            ["saida","hora_saida"],
+
+            ["hora de chegada","hora_chegada"],
+
+            ["hora chegada","hora_chegada"],
+
+            ["chegada","hora_chegada"],
+
+            ["km inicial","km_inicial"],
+
+            ["quilometragem inicial","km_inicial"],
+
+            ["km final","km_final"],
+
+            ["quilometragem final","km_final"],
+
+            ["atividade realizada","atividade"],
+
+            ["atividade","atividade"],
+
+            ["observacoes","observacoes"],
+
+            ["observacao","observacoes"]
+
+        ];
+
+        var encontrados=[];
+
+        campos.forEach(function(item){
+
+            var pos=texto.indexOf(item[0]);
+
+            if(pos>=0){
+
+                encontrados.push({
+                    pos:pos,
+                    fim:pos+item[0].length,
+                    campo:item[1]
+                });
+
+            }
+
+        });
+
+        encontrados.sort(function(a,b){
+            return a.pos-b.pos;
+        });
+
+        if(encontrados.length===0){
+
+            alert(
+                "Fale os campos usando: cliente, granja, cidade, hora de saida, hora de chegada, km inicial, km final, atividade e observacoes."
+            );
+
+            return;
+        }
+
+        encontrados.forEach(function(item,index){
+
+            var fim=
+
+                index+1<encontrados.length
+                ?encontrados[index+1].pos
+                :frase.length;
+
+            var valor=
+
+                frase
+                .substring(item.fim,fim)
+                .replace(/^[\s,:;-]+/,"")
+                .replace(/[\s,:;-]+$/,"")
+                .trim();
+
+            if(!valor) return;
+
+            if(
+                item.campo==="hora_saida" ||
+                item.campo==="hora_chegada"
+            ){
+
+                valor=avisuiHora(valor);
+
+            }
+
+            if(
+                item.campo==="km_inicial" ||
+                item.campo==="km_final"
+            ){
+
+                valor=avisuiNumero(valor);
+
+            }
+
+            avisuiPreencher(
+                item.campo,
+                valor
+            );
+
+        });
+
+    };
+
+    r.start();
+}
+
+</script>
+<!-- FIM AVI SUI VOZ -->
 </body>
 </html>
 """
