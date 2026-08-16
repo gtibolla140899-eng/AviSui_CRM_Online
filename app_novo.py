@@ -302,103 +302,286 @@ th{color:#ddd}
 
 <script>
 (function(){
+
+function normalizar(txt){
+    return txt
+    .toLowerCase()
+    .replace(/[?????]/g,"a")
+    .replace(/[????]/g,"e")
+    .replace(/[????]/g,"i")
+    .replace(/[?????]/g,"o")
+    .replace(/[????]/g,"u")
+    .replace(/?/g,"c")
+    .trim();
+}
+
+function preencher(campo,valor){
+    var el=document.querySelector('[name="'+campo+'"]');
+
+    if(el && valor){
+        el.value=valor.trim();
+        el.dispatchEvent(new Event("input",{bubbles:true}));
+        el.dispatchEvent(new Event("change",{bubbles:true}));
+    }
+}
+
 function iniciarVoz(){
-var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-if(!SR){
-alert("Use o Google Chrome para usar o comando de voz.");
-return;
+
+    var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+
+    if(!SR){
+        alert("Use o Google Chrome para utilizar o comando de voz.");
+        return;
+    }
+
+    var bot=document.getElementById("avisui-voz-btn");
+
+    var r=new SR();
+
+    r.lang="pt-BR";
+    r.interimResults=false;
+    r.continuous=false;
+    r.maxAlternatives=3;
+
+    r.onstart=function(){
+        bot.innerText="OUVINDO...";
+    };
+
+    r.onerror=function(){
+        bot.innerText="COMANDO DE VOZ";
+        alert("Nao consegui entender o comando. Toque novamente e fale com calma.");
+    };
+
+    r.onend=function(){
+        bot.innerText="COMANDO DE VOZ";
+    };
+
+    r.onresult=function(event){
+
+        var texto=event.results[0][0].transcript.trim();
+
+        var original=texto;
+        var t=normalizar(texto);
+
+        var marcadores=[
+            "cliente",
+            "granja",
+            "cidade",
+            "hora de saida",
+            "hora de chegada",
+            "km inicial",
+            "km final",
+            "quilometragem inicial",
+            "quilometragem final",
+            "atividade",
+            "observacao",
+            "observacoes"
+        ];
+
+        var encontrados=[];
+
+        marcadores.forEach(function(m){
+
+            var pos=t.indexOf(m);
+
+            if(pos>=0){
+
+                encontrados.push({
+                    nome:m,
+                    pos:pos
+                });
+
+            }
+
+        });
+
+        encontrados.sort(function(a,b){
+            return a.pos-b.pos;
+        });
+
+        if(encontrados.length===0){
+
+            preencher("cliente",original);
+
+            return;
+        }
+
+        encontrados.forEach(function(item,index){
+
+            var inicioValor=item.pos+item.nome.length;
+
+            var fimValor=t.length;
+
+            if(index+1<encontrados.length){
+                fimValor=encontrados[index+1].pos;
+            }
+
+            var valor=original.substring(inicioValor,fimValor);
+
+            valor=valor
+                .replace(/^[\s,:;-]+/,"")
+                .replace(/[\s,:;-]+$/,"")
+                .trim();
+
+            var campo=null;
+
+            if(item.nome==="cliente"){
+                campo="cliente";
+            }
+
+            else if(item.nome==="granja"){
+                campo="granja";
+            }
+
+            else if(item.nome==="cidade"){
+                campo="cidade";
+            }
+
+            else if(item.nome==="hora de saida"){
+                campo="hora_saida";
+            }
+
+            else if(item.nome==="hora de chegada"){
+                campo="hora_chegada";
+            }
+
+            else if(item.nome==="km inicial" || item.nome==="quilometragem inicial"){
+                campo="km_inicial";
+            }
+
+            else if(item.nome==="km final" || item.nome==="quilometragem final"){
+                campo="km_final";
+            }
+
+            else if(item.nome==="atividade"){
+                campo="atividade";
+            }
+
+            else if(item.nome==="observacao" || item.nome==="observacoes"){
+                campo="observacoes";
+            }
+
+            if(campo){
+
+                if(campo==="hora_saida" || campo==="hora_chegada"){
+
+                    var h=converterHora(valor);
+
+                    if(h){
+                        valor=h;
+                    }
+
+                }
+
+                if(campo==="km_inicial" || campo==="km_final"){
+
+                    valor=converterNumero(valor);
+
+                }
+
+                preencher(campo,valor);
+
+            }
+
+        });
+
+    };
+
+    r.start();
 }
-var bot=document.getElementById("avisui-voz-btn");
-var r=new SR();
-r.lang="pt-BR";
-r.interimResults=false;
-r.continuous=false;
 
-r.onstart=function(){
-bot.innerText="OUVINDO...";
-};
 
-r.onerror=function(e){
-bot.innerText="COMANDO DE VOZ";
-alert("Nao consegui ouvir. Toque novamente e fale perto do celular.");
-};
+function converterNumero(valor){
 
-r.onend=function(){
-bot.innerText="COMANDO DE VOZ";
-};
+    var t=normalizar(valor);
 
-r.onresult=function(e){
-var texto=e.results[0][0].transcript.trim();
-var t=texto.toLowerCase();
+    var numeros={
+        "zero":"0",
+        "um":"1",
+        "dois":"2",
+        "tres":"3",
+        "quatro":"4",
+        "cinco":"5",
+        "seis":"6",
+        "sete":"7",
+        "oito":"8",
+        "nove":"9",
+        "dez":"10"
+    };
 
-var campos=[
-["cliente","cliente"],
-["granja","granja"],
-["cidade","cidade"],
-["atividade","atividade"],
-["observacao","observacoes"],
-["observa??o","observacoes"],
-["hora de saida","hora_saida"],
-["hora de sa?da","hora_saida"],
-["hora de chegada","hora_chegada"],
-["km inicial","km_inicial"],
-["km final","km_final"]
-];
+    Object.keys(numeros).forEach(function(n){
+        t=t.replace(new RegExp("\\b"+n+"\\b","g"),numeros[n]);
+    });
 
-var encontrou=false;
+    var encontrado=t.match(/[0-9]+([.,][0-9]+)?/);
 
-campos.forEach(function(item){
-var nome=item[0];
-var campo=item[1];
+    if(encontrado){
+        return encontrado[0].replace(",",".");
+    }
 
-var regex=new RegExp("(?:^|,|\\s)"+nome+"\\s+(.+?)(?=,\\s*(?:cliente|granja|cidade|atividade|observacao|observa??o|hora de saida|hora de sa?da|hora de chegada|km inicial|km final)\\s+|$)","i");
-
-var resultado=t.match(regex);
-
-if(resultado){
-var elemento=document.querySelector('[name="'+campo+'"]');
-if(elemento){
-elemento.value=resultado[1].trim();
-encontrou=true;
+    return valor;
 }
-}
-});
 
-if(!encontrou){
-var cliente=document.querySelector('[name="cliente"]');
-if(cliente){
-cliente.value=texto;
-}
-}
-};
 
-r.start();
+function converterHora(valor){
+
+    var t=normalizar(valor);
+
+    var h=t.match(/([0-9]{1,2})\s*(?:e|:)?\s*([0-9]{1,2})?/);
+
+    if(!h){
+        return valor;
+    }
+
+    var hora=parseInt(h[1]);
+
+    var minuto=h[2] ? parseInt(h[2]) : 0;
+
+    if(hora>23 || minuto>59){
+        return valor;
+    }
+
+    return String(hora).padStart(2,"0")+":"+String(minuto).padStart(2,"0");
 }
+
 
 function instalar(){
-var form=document.querySelector('form[action="/visita"]');
 
-if(!form)return;
-if(document.getElementById("avisui-voz-btn"))return;
+    var form=document.querySelector('form[action="/visita"]');
 
-var bot=document.createElement("button");
-bot.type="button";
-bot.id="avisui-voz-btn";
-bot.innerText="COMANDO DE VOZ";
+    if(!form){
+        return;
+    }
 
-bot.style.cssText=
-"display:block;width:100%;margin:12px 0;padding:14px;background:#b00000;color:white;border:0;border-radius:8px;font-size:16px;font-weight:bold;";
+    if(document.getElementById("avisui-voz-btn")){
+        return;
+    }
 
-bot.onclick=iniciarVoz;
+    var bot=document.createElement("button");
 
-form.insertBefore(bot,form.firstChild);
+    bot.type="button";
+    bot.id="avisui-voz-btn";
+    bot.innerText="COMANDO DE VOZ";
+
+    bot.style.cssText=
+    "display:block;width:100%;margin:12px 0;padding:14px;background:#b00000;color:white;border:0;border-radius:8px;font-size:16px;font-weight:bold;";
+
+    bot.onclick=iniciarVoz;
+
+    form.insertBefore(bot,form.firstChild);
 }
+
 
 if(document.readyState==="loading"){
-document.addEventListener("DOMContentLoaded",instalar);
+
+    document.addEventListener("DOMContentLoaded",instalar);
+
 }else{
-instalar();
+
+    instalar();
+
 }
+
 })();
 </script>
 
