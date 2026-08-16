@@ -338,322 +338,171 @@ COMANDO DE VOZ
 
 <!-- FIM AVI SUI VOZ -->
 
+
+
+
 <script id="avisui-voice-final">
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded",function(){
 
-    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!Recognition) return;
+const R=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(!R)return;
 
-    const buttons = Array.from(document.querySelectorAll("button"));
-    const voiceButton = buttons.find(b =>
-        /voz|microfone|falar/i.test((b.innerText || "").trim())
-    );
+const botao=[...document.querySelectorAll("button")].find(b =>
+ /voz|microfone/i.test(b.innerText||"")
+);
 
-    if (!voiceButton) return;
+if(!botao)return;
 
-    const recognition = new Recognition();
-    recognition.lang = "pt-BR";
-    recognition.continuous = false;
-    recognition.interimResults = false;
+const r=new R();
+r.lang="pt-BR";
+r.continuous=false;
+r.interimResults=false;
 
-    function fields() {
-        return Array.from(document.querySelectorAll("input, textarea, select"));
-    }
+function campo(nome){
+ return document.querySelector('[name="'+nome+'"]');
+}
 
-    function textOf(el) {
-        let text = [
-            el.name || "",
-            el.id || "",
-            el.placeholder || "",
-            el.getAttribute("aria-label") || ""
-        ].join(" ").toLowerCase();
+function preencher(nome,valor){
+ if(!valor)return;
+ const e=campo(nome);
+ if(!e)return;
 
-        if (el.previousElementSibling)
-            text += " " + (el.previousElementSibling.innerText || "").toLowerCase();
+ e.value=valor.trim();
+ e.dispatchEvent(new Event("input",{bubbles:true}));
+ e.dispatchEvent(new Event("change",{bubbles:true}));
+}
 
-        if (el.parentElement)
-            text += " " + (el.parentElement.innerText || "").toLowerCase();
+function pegar(texto,chave,proximas){
 
-        return text;
-    }
+ let pos=texto.indexOf(chave);
+ if(pos<0)return "";
 
-    function findField(words) {
-        return fields().find(el => {
-            const t = textOf(el);
-            return words.some(w => t.includes(w));
-        });
-    }
+ let inicio=pos+chave.length;
+ let fim=texto.length;
 
-    function setField(words, value) {
-        if (!value) return;
+ for(const p of proximas){
+   let x=texto.indexOf(p,inicio);
+   if(x>=0 && x<fim)fim=x;
+ }
 
-        const el = findField(words);
-        if (!el) return;
+ return texto.substring(inicio,fim)
+   .replace(/^[\s,:-]+/,"")
+   .trim();
+}
 
-        const setter =
-            Object.getOwnPropertyDescriptor(
-                el.tagName === "TEXTAREA"
-                    ? HTMLTextAreaElement.prototype
-                    : HTMLInputElement.prototype,
-                "value"
-            )?.set;
+function numero(v){
+ v=v.replace(/\bkm\b/gi,"").trim();
 
-        if (setter) setter.call(el, value);
-        else el.value = value;
+ if(/^\d{1,3}\.\d{3}$/.test(v))
+   v=v.replace(".","");
 
-        el.dispatchEvent(new Event("input", {bubbles:true}));
-        el.dispatchEvent(new Event("change", {bubbles:true}));
-        el.dispatchEvent(new Event("blur", {bubbles:true}));
-    }
+ return v.replace(",",".").trim();
+}
 
-    function normalizeNumber(v) {
-        v = v
-            .replace(/\bquilômetros?\b/gi, "")
-            .replace(/\bkm\b/gi, "")
-            .trim();
+function horario(v){
+ v=v.replace(/\bhoras?\b/gi,"").trim();
 
-        // 5.600 -> 5600
-        if (/^\d{1,3}(\.\d{3})+$/.test(v))
-            v = v.replace(/\./g, "");
+ let m=v.match(/\d{1,2}[:h]\d{2}/);
 
-        return v.replace(",", ".");
-    }
+ if(m)return m[0].replace("h",":");
 
-    function normalizeTime(v) {
-        v = v
-            .replace(/\bhoras?\b/gi, "")
-            .replace(/\s+/g, "")
-            .trim();
+ return v;
+}
 
-        const m = v.match(/(\d{1,2})[:h](\d{2})/);
-        if (m)
-            return m[1].padStart(2,"0") + ":" + m[2];
+botao.addEventListener("click",function(e){
 
-        return v;
-    }
+ e.preventDefault();
 
-    function valueBetween(text, startWords, stopWords) {
+ try{
+   r.start();
+   botao.innerText="🎤 Ouvindo...";
+ }catch(err){}
 
-        let start = -1;
-        let matched = "";
+});
 
-        for (const word of startWords) {
-            const pos = text.indexOf(word);
-            if (pos !== -1 && (start === -1 || pos < start)) {
-                start = pos;
-                matched = word;
-            }
-        }
+r.onresult=function(e){
 
-        if (start === -1) return "";
+ let t=e.results[0][0].transcript
+   .toLowerCase()
+   .replace(/\s+/g," ")
+   .trim();
 
-        let from = start + matched.length;
-        let end = text.length;
+ console.log("AviSui voz:",t);
 
-        for (const word of stopWords) {
-            const pos = text.indexOf(word, from);
-            if (pos !== -1 && pos < end)
-                end = pos;
-        }
+ const chaves=[
+   "cliente ",
+   "granja ",
+   "cidade ",
+   "horário de saída ",
+   "horario de saida ",
+   "hora de saída ",
+   "hora de saida ",
+   "horário de chegada ",
+   "horario de chegada ",
+   "hora de chegada ",
+   "hora de chegada ",
+   "km inicial ",
+   "quilometragem inicial ",
+   "km final ",
+   "quilometragem final ",
+   "atividade realizada ",
+   "atividade "
+ ];
 
-        return text.substring(from, end)
-            .replace(/^[\s:,-]+/, "")
-            .replace(/[\s,.-]+$/, "")
-            .trim();
-    }
+ let cliente=pegar(t,"cliente ",chaves);
+ let granja=pegar(t,"granja ",chaves);
+ let cidade=pegar(t,"cidade ",chaves);
 
-    function processSpeech(original) {
+ let saida="";
+ for(const k of [
+  "horário de saída ",
+  "horario de saida ",
+  "hora de saída ",
+  "hora de saida "
+ ]){
+   saida=pegar(t,k,chaves);
+   if(saida)break;
+ }
 
-        let text = original
-            .toLowerCase()
-            .replace(/[.;]/g, " ")
-            .replace(/\s+/g, " ")
-            .trim();
+ let chegada="";
+ for(const k of [
+  "horário de chegada ",
+  "horario de chegada ",
+  "hora de chegada "
+ ]){
+   chegada=pegar(t,k,chaves);
+   if(chegada)break;
+ }
 
-        const stops = [
-            " funcionário ",
-            " funcionario ",
-            " cliente ",
-            " granja ",
-            " cidade ",
-            " horário de saída ",
-            " horario de saida ",
-            " hora de saída ",
-            " hora de saida ",
-            " saída ",
-            " saida ",
-            " horário de chegada ",
-            " horario de chegada ",
-            " hora de chegada ",
-            " chegada ",
-            " km inicial ",
-            " quilometragem inicial ",
-            " km final ",
-            " quilometragem final ",
-            " atividade ",
-            " atividade realizada "
-        ];
+ let kmi=pegar(t,"km inicial ",chaves);
+ if(!kmi)kmi=pegar(t,"quilometragem inicial ",chaves);
 
-        let funcionario = valueBetween(
-            " funcionário " + text,
-            [" funcionário "],
-            stops.filter(x => x !== " funcionário ")
-        );
+ let kmf=pegar(t,"km final ",chaves);
+ if(!kmf)kmf=pegar(t,"quilometragem final ",chaves);
 
-        if (!funcionario) {
-            funcionario = valueBetween(
-                " funcionario " + text,
-                [" funcionario "],
-                stops.filter(x => x !== " funcionario ")
-            );
-        }
+ let atividade=pegar(t,"atividade realizada ",chaves);
+ if(!atividade)atividade=pegar(t,"atividade ",chaves);
 
-        // Se o nome vier no começo da frase, antes de "granja",
-        // trata como funcionário.
-        if (!funcionario) {
-            const firstStop = text.indexOf(" granja ");
-            if (firstStop > 0) {
-                const firstPart = text.substring(0, firstStop).trim();
-                if (!firstPart.startsWith("cliente "))
-                    funcionario = firstPart.replace(/^nome\s+/i,"").trim();
-            }
-        }
+ preencher("cliente",cliente);
+ preencher("granja",granja);
+ preencher("cidade",cidade);
+ preencher("hora_saida",horario(saida));
+ preencher("hora_chegada",horario(chegada));
+ preencher("km_inicial",numero(kmi));
+ preencher("km_final",numero(kmf));
+ preencher("atividade",atividade);
 
-        const cliente = valueBetween(
-            text,
-            ["cliente "],
-            stops.filter(x => x !== " cliente ")
-        );
+ botao.innerText="🎤 Comando de voz";
+};
 
-        const granja = valueBetween(
-            text,
-            ["granja "],
-            stops.filter(x => x !== " granja ")
-        );
+r.onerror=function(){
+ botao.innerText="🎤 Comando de voz";
+};
 
-        const cidade = valueBetween(
-            text,
-            ["cidade "],
-            stops.filter(x => x !== " cidade ")
-        );
+r.onend=function(){
+ botao.innerText="🎤 Comando de voz";
+};
 
-        const saida = valueBetween(
-            text,
-            ["horário de saída ","horario de saida ","hora de saída ","hora de saida ","saída ","saida "],
-            stops.filter(x =>
-                ![
-                    " horário de saída ",
-                    " horario de saida ",
-                    " hora de saída ",
-                    " hora de saida ",
-                    " saída ",
-                    " saida "
-                ].includes(x)
-            )
-        );
-
-        const chegada = valueBetween(
-            text,
-            ["horário de chegada ","horario de chegada ","hora de chegada ","horario de chegada ","chegada "],
-            stops.filter(x =>
-                ![
-                    " horário de chegada ",
-                    " horario de chegada ",
-                    " hora de chegada ",
-                    " horario de chegada ",
-                    " chegada "
-                ].includes(x)
-            )
-        );
-
-        const kmInicial = valueBetween(
-            text,
-            ["km inicial ","quilometragem inicial "],
-            stops.filter(x => ![" km inicial "," quilometragem inicial "].includes(x))
-        );
-
-        const kmFinal = valueBetween(
-            text,
-            ["km final ","quilometragem final "],
-            stops.filter(x => ![" km final "," quilometragem final "].includes(x))
-        );
-
-        const atividade = valueBetween(
-            text,
-            ["atividade realizada ","atividade "],
-            stops.filter(x => ![" atividade realizada "," atividade "].includes(x))
-        );
-
-        setField(
-            ["funcionário","funcionario","nome do funcionário","nome do funcionario","colaborador"],
-            funcionario
-        );
-
-        setField(["cliente","nome do cliente"], cliente);
-        setField(["granja","nome da granja","fazenda"], granja);
-        setField(["cidade","município","municipio"], cidade);
-
-        setField(
-            ["hora de saída","horário de saída","horario de saida","hora_saida","saida"],
-            normalizeTime(saida)
-        );
-
-        setField(
-            ["hora de chegada","horário de chegada","horario de chegada","hora_chegada","chegada"],
-            normalizeTime(chegada)
-        );
-
-        setField(
-            ["quilometragem inicial","km inicial","km_inicial","quilometragem_inicio"],
-            normalizeNumber(kmInicial)
-        );
-
-        setField(
-            ["quilometragem final","km final","km_final","quilometragem_fim"],
-            normalizeNumber(kmFinal)
-        );
-
-        setField(
-            ["atividade realizada","atividade","serviço realizado","servico realizado"],
-            atividade
-        );
-
-        console.log("AviSui - comando de voz:", {
-            funcionario,
-            cliente,
-            granja,
-            cidade,
-            saida,
-            chegada,
-            kmInicial,
-            kmFinal,
-            atividade
-        });
-    }
-
-    voiceButton.addEventListener("click", function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        try {
-            recognition.start();
-            voiceButton.innerText = "🎤 Ouvindo...";
-        } catch(err) {}
-    });
-
-    recognition.onresult = function(event) {
-        const spoken = event.results[0][0].transcript || "";
-        processSpeech(spoken);
-        voiceButton.innerText = "🎤 Comando de voz";
-    };
-
-    recognition.onerror = function() {
-        voiceButton.innerText = "🎤 Comando de voz";
-    };
-
-    recognition.onend = function() {
-        voiceButton.innerText = "🎤 Comando de voz";
-    };
 });
 </script>
 
