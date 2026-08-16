@@ -299,6 +299,63 @@ th{color:#ddd}
 
 </div>
 </div>
+
+<script>
+(function(){
+function iniciarVoz(){
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(!SR){alert("Seu navegador nao suporta comando de voz. Use Chrome.");return;}
+var r=new SR();
+r.lang="pt-BR";
+r.interimResults=false;
+r.continuous=false;
+r.onstart=function(){document.getElementById("avisui-voz-btn").innerText="??? OUVINDO...";};
+r.onend=function(){document.getElementById("avisui-voz-btn").innerText="?? COMANDO DE VOZ";};
+r.onerror=function(){document.getElementById("avisui-voz-btn").innerText="?? COMANDO DE VOZ";};
+r.onresult=function(e){
+var t=e.results[0][0].transcript.toLowerCase().trim();
+var mapa=[
+["cliente","cliente"],["granja","granja"],["cidade","cidade"],
+["atividade","atividade"],["observacao","observacoes"],
+["observa??o","observacoes"],["hora de saida","hora_saida"],
+["hora de sa?da","hora_saida"],["hora de chegada","hora_chegada"],
+["km inicial","km_inicial"],["quilometragem inicial","km_inicial"],
+["km final","km_final"],["quilometragem final","km_final"]
+];
+var achou=false;
+mapa.forEach(function(x){
+var re=new RegExp("^"+x[0]+"\\s+(.+)$","i");
+var m=t.match(re);
+if(m){var el=document.querySelector('[name="'+x[1]+'"]');if(el){el.value=m[1].trim();achou=true;}}
+});
+if(!achou){
+var partes=t.split(/\s+(?=cliente |granja |cidade |atividade |observacao |observa??o |hora de saida |hora de sa?da |hora de chegada |km inicial |km final )/i);
+partes.forEach(function(parte){
+mapa.forEach(function(x){
+var re=new RegExp("^"+x[0]+"\\s+(.+)$","i");
+var m=parte.trim().match(re);
+if(m){var el=document.querySelector('[name="'+x[1]+'"]');if(el)el.value=m[1].trim();}
+});
+});
+}
+};
+r.start();
+}
+function instalar(){
+var form=document.querySelector('form[action="/visita"]');
+if(!form||document.getElementById("avisui-voz-btn"))return;
+var b=document.createElement("button");
+b.type="button";
+b.id="avisui-voz-btn";
+b.innerText="?? COMANDO DE VOZ";
+b.style.cssText="display:block;width:100%;margin:12px 0;padding:14px;background:#b00000;color:white;border:0;border-radius:8px;font-size:16px;font-weight:bold;";
+b.onclick=iniciarVoz;
+form.insertBefore(b,form.firstChild);
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",instalar);else instalar();
+})();
+</script>
+
 </body>
 </html>
 """
