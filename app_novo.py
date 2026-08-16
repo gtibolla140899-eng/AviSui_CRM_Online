@@ -1277,7 +1277,87 @@ function avisuiComandoVoz(){
 
 </script>
 <!-- FIM AVI SUI VOZ -->
-<script>document.addEventListener('DOMContentLoaded',()=>{const b=[...document.querySelectorAll('button')].find(x=>/voz|microfone/i.test(x.innerText));if(!b||!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){return}const R=window.SpeechRecognition||window.webkitSpeechRecognition;r=new R();r.lang='pt-BR';r.continuous=false;r.interimResults=false;b.addEventListener('click',()=>{r.start();b.innerText='🎤 Ouvindo...'});r.onresult=e=>{const t=e.results[0][0].transcript.toLowerCase();const f=[...document.querySelectorAll('input,textarea,select')];const mapa=[['cliente','cliente'],['granja','granja'],['cidade','cidade'],['saída','saida'],['saida','saida'],['chegada','chegada'],['quilometragem inicial','km'],['quilometragem final','km'],['atividade','atividade']];mapa.forEach(([k,n])=>{let z=t.indexOf(k);if(z>=0){let v=t.substring(z+k.length).split(',')[0].trim();let el=f.find(x=>(x.name||x.id||'').toLowerCase().includes(n));if(el){el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}))}}});b.innerText='🎤 Comando de voz'};r.onerror=()=>b.innerText='🎤 Comando de voz';r.onend=()=>b.innerText='🎤 Comando de voz'});</script></body>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+const botoes=[...document.querySelectorAll('button')];
+const botao=botoes.find(x=>/voz|microfone/i.test(x.innerText));
+if(!botao)return;
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(!SR)return;
+const rec=new SR();
+rec.lang='pt-BR';
+rec.continuous=false;
+rec.interimResults=false;
+
+function todosCampos(){
+ return [...document.querySelectorAll('input,textarea,select')];
+}
+function achar(palavras){
+ return todosCampos().find(e=>{
+  let x=((e.name||'')+' '+(e.id||'')+' '+(e.placeholder||'')+' '+(e.previousElementSibling?.innerText||'')).toLowerCase();
+  return palavras.some(p=>x.includes(p));
+ });
+}
+function colocar(palavras,valor){
+ if(!valor)return;
+ let e=achar(palavras);
+ if(e){
+  e.value=valor.trim();
+  e.dispatchEvent(new Event('input',{bubbles:true}));
+  e.dispatchEvent(new Event('change',{bubbles:true}));
+ }
+}
+function limpar(v){
+ return v.replace(/^[:=-]\s*/,'').trim();
+}
+function pegar(texto,inicio,proximos){
+ let r=new RegExp(inicio+'\\s*[:=-]?\\s*(.*?)(?=\\s+(?:'+proximos.join('|')+')\\b|$)','i');
+ let m=texto.match(r);
+ return m?limpar(m[1]):'';
+}
+
+botao.addEventListener('click',function(){
+ rec.start();
+ botao.innerText='🎤 Ouvindo...';
+});
+
+rec.onresult=function(e){
+ let t=e.results[0][0].transcript.toLowerCase();
+ t=t.replace(/\s+/g,' ').trim();
+
+ let chaves=['cliente','granja','cidade','hora de saída','hora de chegada','km inicial','km final','atividade realizada'];
+
+ let cliente=pegar(t,'cliente',chaves.filter(x=>x!='cliente'));
+ let granja=pegar(t,'granja',chaves.filter(x=>x!='granja'));
+ let cidade=pegar(t,'cidade',chaves.filter(x=>x!='cidade'));
+ let saida=pegar(t,'hora de saída',chaves.filter(x=>x!='hora de saída'));
+ let chegada=pegar(t,'hora de chegada',chaves.filter(x=>x!='hora de chegada'));
+ let kmi=pegar(t,'km inicial',chaves.filter(x=>x!='km inicial'));
+ let kmf=pegar(t,'km final',chaves.filter(x=>x!='km final'));
+ let atividade=pegar(t,'atividade realizada',chaves.filter(x=>x!='atividade realizada'));
+
+ saida=saida.replace(/\s*horas?\b/g,'').trim();
+ chegada=chegada.replace(/\s*horas?\b/g,'').trim();
+
+ kmi=kmi.replace(/\s*km\b/g,'').replace(/\./g,'').replace(/,/g,'.').trim();
+ kmf=kmf.replace(/\s*km\b/g,'').replace(/\./g,'').replace(/,/g,'.').trim();
+
+ colocar(['cliente'],cliente);
+ colocar(['granja'],granja);
+ colocar(['cidade'],cidade);
+ colocar(['saída','saida','hora de saída','hora de saida'],saida);
+ colocar(['chegada','hora de chegada'],chegada);
+ colocar(['quilometragem inicial','km inicial','km_inicial'],kmi);
+ colocar(['quilometragem final','km final','km_final'],kmf);
+ colocar(['atividade','atividade realizada'],atividade);
+
+ botao.innerText='🎤 Comando de voz';
+};
+
+rec.onerror=function(){botao.innerText='🎤 Comando de voz';};
+rec.onend=function(){botao.innerText='🎤 Comando de voz';};
+});
+</script></body>
 </html>
 """
 
