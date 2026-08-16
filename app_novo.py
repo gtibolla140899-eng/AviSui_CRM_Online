@@ -138,11 +138,6 @@ COMANDO DE VOZ
 <input type="text" name="vendedor" value="Guilherme Tibolla">
 <label>Cliente</label>
 <input type="text" name="cliente" placeholder="Digite o nome do cliente" required>
-<option value="">Selecione o cliente</option>
-{% for c in clientes %}
-<option value="{{ c['nome'] }}">{{ c['nome'] }}</option>
-{% endfor %}
-</select>
 <label>Granja</label><input name="granja">
 <label>Cidade</label><input name="cidade">
 <label>Hora de saída</label><input type="time" name="hora_saida">
