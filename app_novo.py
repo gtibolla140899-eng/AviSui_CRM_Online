@@ -495,6 +495,208 @@ if(document.readyState==="loading"){
 
 })();
 </script>
+
+<!-- AVISUI VOZ FINAL -->
+<script>
+(function(){
+
+function avisuiPreencher(campo,valor){
+    var el=document.querySelector('[name="'+campo+'"]');
+    if(el && valor && valor.trim()){
+        el.value=valor.trim();
+        el.dispatchEvent(new Event("input",{bubbles:true}));
+        el.dispatchEvent(new Event("change",{bubbles:true}));
+    }
+}
+
+function avisuiNormalizar(t){
+    return String(t).toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g,"")
+    .replace(/?/g,"c");
+}
+
+function avisuiHora(v){
+    var s=avisuiNormalizar(v).trim();
+    var m=s.match(/(\d{1,2})\s*(?:e|:)?\s*(\d{1,2})?/);
+
+    if(!m) return v.trim();
+
+    var h=parseInt(m[1],10);
+    var min=m[2] ? parseInt(m[2],10) : 0;
+
+    if(h>23 || min>59) return v.trim();
+
+    return String(h).padStart(2,"0")+":"+String(min).padStart(2,"0");
+}
+
+function avisuiNumero(v){
+    var s=avisuiNormalizar(v);
+
+    var mapa={
+        "zero":"0",
+        "um":"1",
+        "uma":"1",
+        "dois":"2",
+        "duas":"2",
+        "tres":"3",
+        "quatro":"4",
+        "cinco":"5",
+        "seis":"6",
+        "sete":"7",
+        "oito":"8",
+        "nove":"9",
+        "dez":"10"
+    };
+
+    Object.keys(mapa).forEach(function(k){
+        s=s.replace(new RegExp("\\b"+k+"\\b","g"),mapa[k]);
+    });
+
+    var m=s.match(/[0-9]+(?:[.,][0-9]+)?/);
+
+    return m ? m[0].replace(",",".") : v.trim();
+}
+
+function iniciarVoz(){
+
+    var SR=window.SpeechRecognition ||
+           window.webkitSpeechRecognition;
+
+    if(!SR){
+        alert("Abra o AviSui no Google Chrome e permita o microfone.");
+        return;
+    }
+
+    var bot=document.getElementById("avisui-voz-btn");
+
+    var r=new SR();
+
+    r.lang="pt-BR";
+    r.continuous=false;
+    r.interimResults=false;
+    r.maxAlternatives=1;
+
+    r.onstart=function(){
+        bot.innerText="OUVINDO...";
+    };
+
+    r.onend=function(){
+        bot.innerText="COMANDO DE VOZ";
+    };
+
+    r.onerror=function(){
+        bot.innerText="COMANDO DE VOZ";
+        alert("Nao consegui entender. Tente novamente.");
+    };
+
+    r.onresult=function(event){
+
+        var original=event.results[0][0].transcript.trim();
+        var texto=avisuiNormalizar(original);
+
+        var campos=[
+            ["hora de saida","hora_saida"],
+            ["hora de chegada","hora_chegada"],
+            ["km inicial","km_inicial"],
+            ["km final","km_final"],
+            ["atividade realizada","atividade"],
+            ["observacoes","observacoes"],
+            ["observacao","observacoes"],
+            ["cliente","cliente"],
+            ["granja","granja"],
+            ["cidade","cidade"]
+        ];
+
+        var encontrados=[];
+
+        campos.forEach(function(item){
+
+            var pos=texto.indexOf(item[0]);
+
+            if(pos>=0){
+                encontrados.push({
+                    pos:pos,
+                    fim:pos+item[0].length,
+                    campo:item[1]
+                });
+            }
+
+        });
+
+        encontrados.sort(function(a,b){
+            return a.pos-b.pos;
+        });
+
+        if(encontrados.length===0){
+            avisuiPreencher("cliente",original);
+            return;
+        }
+
+        encontrados.forEach(function(item,index){
+
+            var fim=index+1<encontrados.length
+                ? encontrados[index+1].pos
+                : original.length;
+
+            var valor=original.substring(item.fim,fim)
+                .replace(/^[\s,:;-]+/,"")
+                .replace(/[\s,:;-]+$/,"")
+                .trim();
+
+            if(!valor) return;
+
+            if(item.campo==="hora_saida" ||
+               item.campo==="hora_chegada"){
+                valor=avisuiHora(valor);
+            }
+
+            if(item.campo==="km_inicial" ||
+               item.campo==="km_final"){
+                valor=avisuiNumero(valor);
+            }
+
+            avisuiPreencher(item.campo,valor);
+        });
+    };
+
+    r.start();
+}
+
+function instalarVoz(){
+
+    var formulario=document.querySelector('form[action="/visita"]');
+
+    if(!formulario) return;
+
+    if(document.getElementById("avisui-voz-btn")) return;
+
+    var bot=document.createElement("button");
+
+    bot.type="button";
+    bot.id="avisui-voz-btn";
+    bot.innerText="COMANDO DE VOZ";
+
+    bot.style.cssText=
+        "display:block;width:100%;margin:15px 0;padding:15px;" +
+        "background:#b00000;color:white;border:none;border-radius:8px;" +
+        "font-size:17px;font-weight:bold;cursor:pointer;";
+
+    bot.onclick=iniciarVoz;
+
+    formulario.insertBefore(bot,formulario.firstChild);
+}
+
+if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",instalarVoz);
+}else{
+    instalarVoz();
+}
+
+})();
+</script>
+<!-- FIM AVISUI VOZ FINAL -->
+
 </body>
 </html>
 """
