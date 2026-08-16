@@ -323,1041 +323,341 @@ COMANDO DE VOZ
 </div>
 </div>
 
-<script>
-(function(){
 
-function preencher(campo, valor){
-    var el = document.querySelector('[name="' + campo + '"]');
-    if(el && valor){
-        el.value = valor.trim();
-        el.dispatchEvent(new Event("input",{bubbles:true}));
-        el.dispatchEvent(new Event("change",{bubbles:true}));
-    }
-}
-
-function normalizar(t){
-    return t.toLowerCase()
-    .replace(/[?????]/g,"a")
-    .replace(/[????]/g,"e")
-    .replace(/[????]/g,"i")
-    .replace(/[?????]/g,"o")
-    .replace(/[????]/g,"u")
-    .replace(/?/g,"c");
-}
-
-function hora(v){
-    var s=normalizar(v);
-    var m=s.match(/(\d{1,2})\s*(?:e|:)\s*(\d{1,2})?/);
-
-    if(!m) return v.trim();
-
-    var h=parseInt(m[1]);
-    var min=m[2] ? parseInt(m[2]) : 0;
-
-    if(h>23 || min>59) return v.trim();
-
-    return String(h).padStart(2,"0")+":"+
-           String(min).padStart(2,"0");
-}
-
-function numero(v){
-    var s=normalizar(v);
-
-    var mapa={
-        "zero":"0","um":"1","uma":"1",
-        "dois":"2","duas":"2","tres":"3",
-        "quatro":"4","cinco":"5","seis":"6",
-        "sete":"7","oito":"8","nove":"9",
-        "dez":"10"
-    };
-
-    Object.keys(mapa).forEach(function(k){
-        s=s.replace(new RegExp("\\b"+k+"\\b","g"),mapa[k]);
-    });
-
-    var m=s.match(/[0-9]+(?:[.,][0-9]+)?/);
-
-    return m ? m[0].replace(",",".") : v.trim();
-}
-
-function ouvir(){
-
-    var SR=window.SpeechRecognition ||
-           window.webkitSpeechRecognition;
-
-    if(!SR){
-        alert("Abra o AviSui pelo Google Chrome e permita o microfone.");
-        return;
-    }
-
-    var bot=document.getElementById("avisui-voz-btn");
-
-    var r=new SR();
-
-    r.lang="pt-BR";
-    r.continuous=false;
-    r.interimResults=false;
-
-    r.onstart=function(){
-        bot.innerText="OUVINDO...";
-    };
-
-    r.onerror=function(){
-        bot.innerText="COMANDO DE VOZ";
-        alert("Nao consegui entender. Tente novamente.");
-    };
-
-    r.onend=function(){
-        bot.innerText="COMANDO DE VOZ";
-    };
-
-    r.onresult=function(e){
-
-        var original=e.results[0][0].transcript.trim();
-        var texto=normalizar(original);
-
-        var campos=[
-            ["hora de saida","hora_saida"],
-            ["hora de chegada","hora_chegada"],
-            ["km inicial","km_inicial"],
-            ["km final","km_final"],
-            ["atividade realizada","atividade"],
-            ["observacoes","observacoes"],
-            ["observacao","observacoes"],
-            ["cliente","cliente"],
-            ["granja","granja"],
-            ["cidade","cidade"]
-        ];
-
-        var encontrados=[];
-
-        campos.forEach(function(c){
-
-            var pos=texto.indexOf(c[0]);
-
-            if(pos>=0){
-                encontrados.push({
-                    pos:pos,
-                    fim:pos+c[0].length,
-                    campo:c[1]
-                });
-            }
-
-        });
-
-        encontrados.sort(function(a,b){
-            return a.pos-b.pos;
-        });
-
-        if(encontrados.length===0){
-            preencher("cliente",original);
-            return;
-        }
-
-        encontrados.forEach(function(item,i){
-
-            var fim=i+1<encontrados.length
-                ? encontrados[i+1].pos
-                : original.length;
-
-            var valor=original
-                .substring(item.fim,fim)
-                .replace(/^[\s,:;-]+/,"")
-                .replace(/[\s,:;-]+$/,"")
-                .trim();
-
-            if(!valor) return;
-
-            if(item.campo==="hora_saida" ||
-               item.campo==="hora_chegada"){
-                valor=hora(valor);
-            }
-
-            if(item.campo==="km_inicial" ||
-               item.campo==="km_final"){
-                valor=numero(valor);
-            }
-
-            preencher(item.campo,valor);
-        });
-    };
-
-    r.start();
-}
-
-function instalar(){
-
-    var form=document.querySelector('form[action="/visita"]');
-
-    if(!form) return;
-
-    if(document.getElementById("avisui-voz-btn")) return;
-
-    var bot=document.createElement("button");
-
-    bot.type="button";
-    bot.id="avisui-voz-btn";
-    bot.innerText="COMANDO DE VOZ";
-
-    bot.style.cssText=
-        "display:block;width:100%;margin:12px 0;" +
-        "padding:14px;background:#b00000;color:white;" +
-        "border:0;border-radius:8px;" +
-        "font-size:16px;font-weight:bold;";
-
-    bot.onclick=ouvir;
-
-    form.insertBefore(bot,form.firstChild);
-}
-
-if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",instalar);
-}else{
-    instalar();
-}
-
-})();
-</script>
 
 <!-- AVISUI VOZ FINAL -->
-<script>
-(function(){
 
-function avisuiPreencher(campo,valor){
-    var el=document.querySelector('[name="'+campo+'"]');
-    if(el && valor && valor.trim()){
-        el.value=valor.trim();
-        el.dispatchEvent(new Event("input",{bubbles:true}));
-        el.dispatchEvent(new Event("change",{bubbles:true}));
-    }
-}
-
-function avisuiNormalizar(t){
-    return String(t).toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g,"")
-    .replace(/?/g,"c");
-}
-
-function avisuiHora(v){
-    var s=avisuiNormalizar(v).trim();
-    var m=s.match(/(\d{1,2})\s*(?:e|:)?\s*(\d{1,2})?/);
-
-    if(!m) return v.trim();
-
-    var h=parseInt(m[1],10);
-    var min=m[2] ? parseInt(m[2],10) : 0;
-
-    if(h>23 || min>59) return v.trim();
-
-    return String(h).padStart(2,"0")+":"+String(min).padStart(2,"0");
-}
-
-function avisuiNumero(v){
-    var s=avisuiNormalizar(v);
-
-    var mapa={
-        "zero":"0",
-        "um":"1",
-        "uma":"1",
-        "dois":"2",
-        "duas":"2",
-        "tres":"3",
-        "quatro":"4",
-        "cinco":"5",
-        "seis":"6",
-        "sete":"7",
-        "oito":"8",
-        "nove":"9",
-        "dez":"10"
-    };
-
-    Object.keys(mapa).forEach(function(k){
-        s=s.replace(new RegExp("\\b"+k+"\\b","g"),mapa[k]);
-    });
-
-    var m=s.match(/[0-9]+(?:[.,][0-9]+)?/);
-
-    return m ? m[0].replace(",",".") : v.trim();
-}
-
-function iniciarVoz(){
-
-    var SR=window.SpeechRecognition ||
-           window.webkitSpeechRecognition;
-
-    if(!SR){
-        alert("Abra o AviSui no Google Chrome e permita o microfone.");
-        return;
-    }
-
-    var bot=document.getElementById("avisui-voz-btn");
-
-    var r=new SR();
-
-    r.lang="pt-BR";
-    r.continuous=false;
-    r.interimResults=false;
-    r.maxAlternatives=1;
-
-    r.onstart=function(){
-        bot.innerText="OUVINDO...";
-    };
-
-    r.onend=function(){
-        bot.innerText="COMANDO DE VOZ";
-    };
-
-    r.onerror=function(){
-        bot.innerText="COMANDO DE VOZ";
-        alert("Nao consegui entender. Tente novamente.");
-    };
-
-    r.onresult=function(event){
-
-        var original=event.results[0][0].transcript.trim();
-        var texto=avisuiNormalizar(original);
-
-        var campos=[
-            ["hora de saida","hora_saida"],
-            ["hora de chegada","hora_chegada"],
-            ["km inicial","km_inicial"],
-            ["km final","km_final"],
-            ["atividade realizada","atividade"],
-            ["observacoes","observacoes"],
-            ["observacao","observacoes"],
-            ["cliente","cliente"],
-            ["granja","granja"],
-            ["cidade","cidade"]
-        ];
-
-        var encontrados=[];
-
-        campos.forEach(function(item){
-
-            var pos=texto.indexOf(item[0]);
-
-            if(pos>=0){
-                encontrados.push({
-                    pos:pos,
-                    fim:pos+item[0].length,
-                    campo:item[1]
-                });
-            }
-
-        });
-
-        encontrados.sort(function(a,b){
-            return a.pos-b.pos;
-        });
-
-        if(encontrados.length===0){
-            avisuiPreencher("cliente",original);
-            return;
-        }
-
-        encontrados.forEach(function(item,index){
-
-            var fim=index+1<encontrados.length
-                ? encontrados[index+1].pos
-                : original.length;
-
-            var valor=original.substring(item.fim,fim)
-                .replace(/^[\s,:;-]+/,"")
-                .replace(/[\s,:;-]+$/,"")
-                .trim();
-
-            if(!valor) return;
-
-            if(item.campo==="hora_saida" ||
-               item.campo==="hora_chegada"){
-                valor=avisuiHora(valor);
-            }
-
-            if(item.campo==="km_inicial" ||
-               item.campo==="km_final"){
-                valor=avisuiNumero(valor);
-            }
-
-            avisuiPreencher(item.campo,valor);
-        });
-    };
-
-    r.start();
-}
-
-function instalarVoz(){
-
-    var formulario=document.querySelector('form[action="/visita"]');
-
-    if(!formulario) return;
-
-    if(document.getElementById("avisui-voz-btn")) return;
-
-    var bot=document.createElement("button");
-
-    bot.type="button";
-    bot.id="avisui-voz-btn";
-    bot.innerText="COMANDO DE VOZ";
-
-    bot.style.cssText=
-        "display:block;width:100%;margin:15px 0;padding:15px;" +
-        "background:#b00000;color:white;border:none;border-radius:8px;" +
-        "font-size:17px;font-weight:bold;cursor:pointer;";
-
-    bot.onclick=iniciarVoz;
-
-    formulario.insertBefore(bot,formulario.firstChild);
-}
-
-if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",instalarVoz);
-}else{
-    instalarVoz();
-}
-
-})();
-</script>
 <!-- FIM AVISUI VOZ FINAL -->
 
 
 <!-- AVISUI VOZ DEFINITIVO -->
-<script>
-function avisuiNormalizar(t){
-    return String(t).toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g,"")
-    .replace(/?/g,"c");
-}
 
-function avisuiCampo(nome,valor){
-    var campo=document.querySelector('[name="'+nome+'"]');
-
-    if(!campo) return;
-
-    valor=String(valor).trim();
-
-    if(!valor) return;
-
-    campo.value=valor;
-
-    campo.dispatchEvent(
-        new Event("input",{bubbles:true})
-    );
-
-    campo.dispatchEvent(
-        new Event("change",{bubbles:true})
-    );
-}
-
-function avisuiHora(v){
-
-    var s=avisuiNormalizar(v);
-
-    var numeros=s.match(/\d+/g);
-
-    if(!numeros) return v;
-
-    var h=parseInt(numeros[0]);
-
-    var m=numeros.length>1
-        ?parseInt(numeros[1])
-        :0;
-
-    if(h>23) return v;
-
-    if(m>59) m=0;
-
-    return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");
-}
-
-function avisuiNumero(v){
-
-    var s=avisuiNormalizar(v);
-
-    var mapa={
-        "zero":"0",
-        "um":"1",
-        "uma":"1",
-        "dois":"2",
-        "duas":"2",
-        "tres":"3",
-        "quatro":"4",
-        "cinco":"5",
-        "seis":"6",
-        "sete":"7",
-        "oito":"8",
-        "nove":"9",
-        "dez":"10"
-    };
-
-    Object.keys(mapa).forEach(function(k){
-
-        s=s.replace(
-            new RegExp("\\b"+k+"\\b","g"),
-            mapa[k]
-        );
-
-    });
-
-    var n=s.match(/\d+(?:[.,]\d+)?/);
-
-    return n
-        ?n[0].replace(",",".")
-        :v;
-}
-
-function avisuiIniciarVoz(){
-
-    var Speech=
-        window.SpeechRecognition ||
-        window.webkitSpeechRecognition;
-
-    if(!Speech){
-
-        alert(
-            "O comando de voz precisa ser usado no Google Chrome."
-        );
-
-        return;
-    }
-
-    var botao=
-        document.getElementById("avisui-voz-btn");
-
-    var reconhecimento=
-        new Speech();
-
-    reconhecimento.lang="pt-BR";
-    reconhecimento.continuous=false;
-    reconhecimento.interimResults=false;
-    reconhecimento.maxAlternatives=1;
-
-    reconhecimento.onstart=function(){
-
-        if(botao){
-
-            botao.innerText="OUVINDO...";
-
-            botao.style.background="#555";
-
-        }
-    };
-
-    reconhecimento.onend=function(){
-
-        if(botao){
-
-            botao.innerText="COMANDO DE VOZ";
-
-            botao.style.background="#b00000";
-
-        }
-    };
-
-    reconhecimento.onerror=function(){
-
-        if(botao){
-
-            botao.innerText="COMANDO DE VOZ";
-
-            botao.style.background="#b00000";
-
-        }
-
-        alert(
-            "Nao consegui entender. Toque novamente e fale as informacoes."
-        );
-    };
-
-    reconhecimento.onresult=function(event){
-
-        var frase=
-            event.results[0][0].transcript.trim();
-
-        var normalizada=
-            avisuiNormalizar(frase);
-
-        var campos=[
-
-            ["hora de saida","hora_saida"],
-
-            ["hora saida","hora_saida"],
-
-            ["saida","hora_saida"],
-
-            ["hora de chegada","hora_chegada"],
-
-            ["hora chegada","hora_chegada"],
-
-            ["chegada","hora_chegada"],
-
-            ["km inicial","km_inicial"],
-
-            ["quilometragem inicial","km_inicial"],
-
-            ["quilometro inicial","km_inicial"],
-
-            ["km final","km_final"],
-
-            ["quilometragem final","km_final"],
-
-            ["quilometro final","km_final"],
-
-            ["atividade realizada","atividade"],
-
-            ["atividade","atividade"],
-
-            ["observacoes","observacoes"],
-
-            ["observacao","observacoes"],
-
-            ["cliente","cliente"],
-
-            ["granja","granja"],
-
-            ["cidade","cidade"]
-
-        ];
-
-        var encontrados=[];
-
-        campos.forEach(function(item){
-
-            var pos=
-                normalizada.indexOf(item[0]);
-
-            if(pos>=0){
-
-                encontrados.push({
-
-                    pos:pos,
-
-                    fim:
-                        pos+item[0].length,
-
-                    campo:item[1]
-
-                });
-
-            }
-
-        });
-
-        encontrados.sort(function(a,b){
-
-            return a.pos-b.pos;
-
-        });
-
-        if(encontrados.length===0){
-
-            alert(
-                "Fale usando os nomes dos campos. Exemplo: cliente, granja, cidade, hora de saida..."
-            );
-
-            return;
-        }
-
-        encontrados.forEach(function(item,index){
-
-            var finalTexto=
-                index+1<encontrados.length
-                ?encontrados[index+1].pos
-                :frase.length;
-
-            var valor=
-                frase
-                .substring(item.fim,finalTexto)
-                .replace(/^[\s,:;-]+/,"")
-                .replace(/[\s,:;-]+$/,"")
-                .trim();
-
-            if(!valor) return;
-
-            if(
-                item.campo==="hora_saida" ||
-                item.campo==="hora_chegada"
-            ){
-
-                valor=avisuiHora(valor);
-
-            }
-
-            if(
-                item.campo==="km_inicial" ||
-                item.campo==="km_final"
-            ){
-
-                valor=avisuiNumero(valor);
-
-            }
-
-            avisuiCampo(
-                item.campo,
-                valor
-            );
-
-        });
-
-    };
-
-    reconhecimento.start();
-}
-</script>
 <!-- FIM AVISUI VOZ DEFINITIVO -->
 
 <!-- AVI SUI VOZ -->
-<script>
 
-function avisuiNormalizar(t){
-    return String(t)
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g,"")
-    .replace(/?/g,"c");
-}
+<!-- FIM AVI SUI VOZ -->
 
-function avisuiPreencher(nome,valor){
+<script id="avisui-voice-final">
+document.addEventListener("DOMContentLoaded", function () {
 
-    var campo=document.querySelector('[name="'+nome+'"]');
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Recognition) return;
 
-    if(!campo) return;
-
-    valor=String(valor).trim();
-
-    if(valor==="") return;
-
-    campo.value=valor;
-
-    campo.dispatchEvent(
-        new Event("input",{bubbles:true})
+    const buttons = Array.from(document.querySelectorAll("button"));
+    const voiceButton = buttons.find(b =>
+        /voz|microfone|falar/i.test((b.innerText || "").trim())
     );
 
-    campo.dispatchEvent(
-        new Event("change",{bubbles:true})
-    );
-}
+    if (!voiceButton) return;
 
-function avisuiNumero(v){
+    const recognition = new Recognition();
+    recognition.lang = "pt-BR";
+    recognition.continuous = false;
+    recognition.interimResults = false;
 
-    var s=avisuiNormalizar(v);
-
-    var mapa={
-        "zero":"0",
-        "um":"1",
-        "uma":"1",
-        "dois":"2",
-        "duas":"2",
-        "tres":"3",
-        "quatro":"4",
-        "cinco":"5",
-        "seis":"6",
-        "sete":"7",
-        "oito":"8",
-        "nove":"9",
-        "dez":"10",
-        "onze":"11",
-        "doze":"12",
-        "treze":"13",
-        "quatorze":"14",
-        "quinze":"15",
-        "dezesseis":"16",
-        "dezessete":"17",
-        "dezoito":"18",
-        "dezenove":"19",
-        "vinte":"20"
-    };
-
-    Object.keys(mapa).forEach(function(k){
-        s=s.replace(
-            new RegExp("\\b"+k+"\\b","g"),
-            mapa[k]
-        );
-    });
-
-    var n=s.match(/[0-9]+(?:[.,][0-9]+)?/);
-
-    if(!n) return v.trim();
-
-    return n[0].replace(",",".");
-}
-
-function avisuiHora(v){
-
-    var s=avisuiNormalizar(v);
-
-    var n=s.match(/\d+/g);
-
-    if(!n) return v.trim();
-
-    var h=parseInt(n[0],10);
-    var m=n.length>1 ? parseInt(n[1],10) : 0;
-
-    if(h>23) return v.trim();
-
-    if(m>59) m=0;
-
-    return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");
-}
-
-function avisuiComandoVoz(){
-
-    var Reconhecimento=
-        window.SpeechRecognition ||
-        window.webkitSpeechRecognition;
-
-    if(!Reconhecimento){
-
-        alert(
-            "O comando de voz precisa ser usado no Google Chrome."
-        );
-
-        return;
+    function fields() {
+        return Array.from(document.querySelectorAll("input, textarea, select"));
     }
 
-    var botao=
-        document.getElementById("avisui-voz-btn");
+    function textOf(el) {
+        let text = [
+            el.name || "",
+            el.id || "",
+            el.placeholder || "",
+            el.getAttribute("aria-label") || ""
+        ].join(" ").toLowerCase();
 
-    var r=new Reconhecimento();
+        if (el.previousElementSibling)
+            text += " " + (el.previousElementSibling.innerText || "").toLowerCase();
 
-    r.lang="pt-BR";
-    r.continuous=false;
-    r.interimResults=false;
-    r.maxAlternatives=1;
+        if (el.parentElement)
+            text += " " + (el.parentElement.innerText || "").toLowerCase();
 
-    r.onstart=function(){
+        return text;
+    }
 
-        botao.innerText="OUVINDO...";
-        botao.style.background="#555";
-    };
+    function findField(words) {
+        return fields().find(el => {
+            const t = textOf(el);
+            return words.some(w => t.includes(w));
+        });
+    }
 
-    r.onend=function(){
+    function setField(words, value) {
+        if (!value) return;
 
-        botao.innerText="COMANDO DE VOZ";
-        botao.style.background="#c9151d";
-    };
+        const el = findField(words);
+        if (!el) return;
 
-    r.onerror=function(){
+        const setter =
+            Object.getOwnPropertyDescriptor(
+                el.tagName === "TEXTAREA"
+                    ? HTMLTextAreaElement.prototype
+                    : HTMLInputElement.prototype,
+                "value"
+            )?.set;
 
-        botao.innerText="COMANDO DE VOZ";
-        botao.style.background="#c9151d";
+        if (setter) setter.call(el, value);
+        else el.value = value;
 
-        alert(
-            "Nao consegui entender. Toque novamente e fale as informacoes."
-        );
-    };
+        el.dispatchEvent(new Event("input", {bubbles:true}));
+        el.dispatchEvent(new Event("change", {bubbles:true}));
+        el.dispatchEvent(new Event("blur", {bubbles:true}));
+    }
 
-    r.onresult=function(event){
+    function normalizeNumber(v) {
+        v = v
+            .replace(/\bquilômetros?\b/gi, "")
+            .replace(/\bkm\b/gi, "")
+            .trim();
 
-        var frase=
-            event.results[0][0].transcript.trim();
+        // 5.600 -> 5600
+        if (/^\d{1,3}(\.\d{3})+$/.test(v))
+            v = v.replace(/\./g, "");
 
-        var texto=
-            avisuiNormalizar(frase);
+        return v.replace(",", ".");
+    }
 
-        var campos=[
+    function normalizeTime(v) {
+        v = v
+            .replace(/\bhoras?\b/gi, "")
+            .replace(/\s+/g, "")
+            .trim();
 
-            ["vendedor","vendedor"],
+        const m = v.match(/(\d{1,2})[:h](\d{2})/);
+        if (m)
+            return m[1].padStart(2,"0") + ":" + m[2];
 
-            ["cliente","cliente"],
+        return v;
+    }
 
-            ["granja","granja"],
+    function valueBetween(text, startWords, stopWords) {
 
-            ["cidade","cidade"],
+        let start = -1;
+        let matched = "";
 
-            ["hora de saida","hora_saida"],
-
-            ["hora saida","hora_saida"],
-
-            ["saida","hora_saida"],
-
-            ["hora de chegada","hora_chegada"],
-
-            ["hora chegada","hora_chegada"],
-
-            ["chegada","hora_chegada"],
-
-            ["km inicial","km_inicial"],
-
-            ["quilometragem inicial","km_inicial"],
-
-            ["km final","km_final"],
-
-            ["quilometragem final","km_final"],
-
-            ["atividade realizada","atividade"],
-
-            ["atividade","atividade"],
-
-            ["observacoes","observacoes"],
-
-            ["observacao","observacoes"]
-
-        ];
-
-        var encontrados=[];
-
-        campos.forEach(function(item){
-
-            var pos=texto.indexOf(item[0]);
-
-            if(pos>=0){
-
-                encontrados.push({
-                    pos:pos,
-                    fim:pos+item[0].length,
-                    campo:item[1]
-                });
-
+        for (const word of startWords) {
+            const pos = text.indexOf(word);
+            if (pos !== -1 && (start === -1 || pos < start)) {
+                start = pos;
+                matched = word;
             }
-
-        });
-
-        encontrados.sort(function(a,b){
-            return a.pos-b.pos;
-        });
-
-        if(encontrados.length===0){
-
-            alert(
-                "Fale os campos usando: cliente, granja, cidade, hora de saida, hora de chegada, km inicial, km final, atividade e observacoes."
-            );
-
-            return;
         }
 
-        encontrados.forEach(function(item,index){
+        if (start === -1) return "";
 
-            var fim=
+        let from = start + matched.length;
+        let end = text.length;
 
-                index+1<encontrados.length
-                ?encontrados[index+1].pos
-                :frase.length;
+        for (const word of stopWords) {
+            const pos = text.indexOf(word, from);
+            if (pos !== -1 && pos < end)
+                end = pos;
+        }
 
-            var valor=
+        return text.substring(from, end)
+            .replace(/^[\s:,-]+/, "")
+            .replace(/[\s,.-]+$/, "")
+            .trim();
+    }
 
-                frase
-                .substring(item.fim,fim)
-                .replace(/^[\s,:;-]+/,"")
-                .replace(/[\s,:;-]+$/,"")
-                .trim();
+    function processSpeech(original) {
 
-            if(!valor) return;
+        let text = original
+            .toLowerCase()
+            .replace(/[.;]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
 
-            if(
-                item.campo==="hora_saida" ||
-                item.campo==="hora_chegada"
-            ){
+        const stops = [
+            " funcionário ",
+            " funcionario ",
+            " cliente ",
+            " granja ",
+            " cidade ",
+            " horário de saída ",
+            " horario de saida ",
+            " hora de saída ",
+            " hora de saida ",
+            " saída ",
+            " saida ",
+            " horário de chegada ",
+            " horario de chegada ",
+            " hora de chegada ",
+            " chegada ",
+            " km inicial ",
+            " quilometragem inicial ",
+            " km final ",
+            " quilometragem final ",
+            " atividade ",
+            " atividade realizada "
+        ];
 
-                valor=avisuiHora(valor);
+        let funcionario = valueBetween(
+            " funcionário " + text,
+            [" funcionário "],
+            stops.filter(x => x !== " funcionário ")
+        );
 
-            }
-
-            if(
-                item.campo==="km_inicial" ||
-                item.campo==="km_final"
-            ){
-
-                valor=avisuiNumero(valor);
-
-            }
-
-            avisuiPreencher(
-                item.campo,
-                valor
+        if (!funcionario) {
+            funcionario = valueBetween(
+                " funcionario " + text,
+                [" funcionario "],
+                stops.filter(x => x !== " funcionario ")
             );
+        }
 
+        // Se o nome vier no começo da frase, antes de "granja",
+        // trata como funcionário.
+        if (!funcionario) {
+            const firstStop = text.indexOf(" granja ");
+            if (firstStop > 0) {
+                const firstPart = text.substring(0, firstStop).trim();
+                if (!firstPart.startsWith("cliente "))
+                    funcionario = firstPart.replace(/^nome\s+/i,"").trim();
+            }
+        }
+
+        const cliente = valueBetween(
+            text,
+            ["cliente "],
+            stops.filter(x => x !== " cliente ")
+        );
+
+        const granja = valueBetween(
+            text,
+            ["granja "],
+            stops.filter(x => x !== " granja ")
+        );
+
+        const cidade = valueBetween(
+            text,
+            ["cidade "],
+            stops.filter(x => x !== " cidade ")
+        );
+
+        const saida = valueBetween(
+            text,
+            ["horário de saída ","horario de saida ","hora de saída ","hora de saida ","saída ","saida "],
+            stops.filter(x =>
+                ![
+                    " horário de saída ",
+                    " horario de saida ",
+                    " hora de saída ",
+                    " hora de saida ",
+                    " saída ",
+                    " saida "
+                ].includes(x)
+            )
+        );
+
+        const chegada = valueBetween(
+            text,
+            ["horário de chegada ","horario de chegada ","hora de chegada ","horario de chegada ","chegada "],
+            stops.filter(x =>
+                ![
+                    " horário de chegada ",
+                    " horario de chegada ",
+                    " hora de chegada ",
+                    " horario de chegada ",
+                    " chegada "
+                ].includes(x)
+            )
+        );
+
+        const kmInicial = valueBetween(
+            text,
+            ["km inicial ","quilometragem inicial "],
+            stops.filter(x => ![" km inicial "," quilometragem inicial "].includes(x))
+        );
+
+        const kmFinal = valueBetween(
+            text,
+            ["km final ","quilometragem final "],
+            stops.filter(x => ![" km final "," quilometragem final "].includes(x))
+        );
+
+        const atividade = valueBetween(
+            text,
+            ["atividade realizada ","atividade "],
+            stops.filter(x => ![" atividade realizada "," atividade "].includes(x))
+        );
+
+        setField(
+            ["funcionário","funcionario","nome do funcionário","nome do funcionario","colaborador"],
+            funcionario
+        );
+
+        setField(["cliente","nome do cliente"], cliente);
+        setField(["granja","nome da granja","fazenda"], granja);
+        setField(["cidade","município","municipio"], cidade);
+
+        setField(
+            ["hora de saída","horário de saída","horario de saida","hora_saida","saida"],
+            normalizeTime(saida)
+        );
+
+        setField(
+            ["hora de chegada","horário de chegada","horario de chegada","hora_chegada","chegada"],
+            normalizeTime(chegada)
+        );
+
+        setField(
+            ["quilometragem inicial","km inicial","km_inicial","quilometragem_inicio"],
+            normalizeNumber(kmInicial)
+        );
+
+        setField(
+            ["quilometragem final","km final","km_final","quilometragem_fim"],
+            normalizeNumber(kmFinal)
+        );
+
+        setField(
+            ["atividade realizada","atividade","serviço realizado","servico realizado"],
+            atividade
+        );
+
+        console.log("AviSui - comando de voz:", {
+            funcionario,
+            cliente,
+            granja,
+            cidade,
+            saida,
+            chegada,
+            kmInicial,
+            kmFinal,
+            atividade
         });
+    }
 
+    voiceButton.addEventListener("click", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        try {
+            recognition.start();
+            voiceButton.innerText = "🎤 Ouvindo...";
+        } catch(err) {}
+    });
+
+    recognition.onresult = function(event) {
+        const spoken = event.results[0][0].transcript || "";
+        processSpeech(spoken);
+        voiceButton.innerText = "🎤 Comando de voz";
     };
 
-    r.start();
-}
+    recognition.onerror = function() {
+        voiceButton.innerText = "🎤 Comando de voz";
+    };
 
+    recognition.onend = function() {
+        voiceButton.innerText = "🎤 Comando de voz";
+    };
+});
 </script>
-<!-- FIM AVI SUI VOZ -->
-<script>
-document.addEventListener('DOMContentLoaded', function(){
-const botoes=[...document.querySelectorAll('button')];
-const botao=botoes.find(x=>/voz|microfone/i.test(x.innerText));
-if(!botao)return;
-const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-if(!SR)return;
-const rec=new SR();
-rec.lang='pt-BR';
-rec.continuous=false;
-rec.interimResults=false;
 
-function todosCampos(){
- return [...document.querySelectorAll('input,textarea,select')];
-}
-function achar(palavras){
- return todosCampos().find(e=>{
-  let x=((e.name||'')+' '+(e.id||'')+' '+(e.placeholder||'')+' '+(e.previousElementSibling?.innerText||'')).toLowerCase();
-  return palavras.some(p=>x.includes(p));
- });
-}
-function colocar(palavras,valor){
- if(!valor)return;
- let e=achar(palavras);
- if(e){
-  e.value=valor.trim();
-  e.dispatchEvent(new Event('input',{bubbles:true}));
-  e.dispatchEvent(new Event('change',{bubbles:true}));
- }
-}
-function limpar(v){
- return v.replace(/^[:=-]\s*/,'').trim();
-}
-function pegar(texto,inicio,proximos){
- let r=new RegExp(inicio+'\\s*[:=-]?\\s*(.*?)(?=\\s+(?:'+proximos.join('|')+')\\b|$)','i');
- let m=texto.match(r);
- return m?limpar(m[1]):'';
-}
-
-botao.addEventListener('click',function(){
- rec.start();
- botao.innerText='🎤 Ouvindo...';
-});
-
-rec.onresult=function(e){
- let t=e.results[0][0].transcript.toLowerCase();
- t=t.replace(/\s+/g,' ').trim();
-
- let chaves=['cliente','granja','cidade','hora de saída','hora de chegada','km inicial','km final','atividade realizada'];
-
- let cliente=pegar(t,'cliente',chaves.filter(x=>x!='cliente'));
- let granja=pegar(t,'granja',chaves.filter(x=>x!='granja'));
- let cidade=pegar(t,'cidade',chaves.filter(x=>x!='cidade'));
- let saida=pegar(t,'hora de saída',chaves.filter(x=>x!='hora de saída'));
- let chegada=pegar(t,'hora de chegada',chaves.filter(x=>x!='hora de chegada'));
- let kmi=pegar(t,'km inicial',chaves.filter(x=>x!='km inicial'));
- let kmf=pegar(t,'km final',chaves.filter(x=>x!='km final'));
- let atividade=pegar(t,'atividade realizada',chaves.filter(x=>x!='atividade realizada'));
-
- saida=saida.replace(/\s*horas?\b/g,'').trim();
- chegada=chegada.replace(/\s*horas?\b/g,'').trim();
-
- kmi=kmi.replace(/\s*km\b/g,'').replace(/\./g,'').replace(/,/g,'.').trim();
- kmf=kmf.replace(/\s*km\b/g,'').replace(/\./g,'').replace(/,/g,'.').trim();
-
- colocar(['cliente'],cliente);
- colocar(['granja'],granja);
- colocar(['cidade'],cidade);
- colocar(['saída','saida','hora de saída','hora de saida'],saida);
- colocar(['chegada','hora de chegada'],chegada);
- colocar(['quilometragem inicial','km inicial','km_inicial'],kmi);
- colocar(['quilometragem final','km final','km_final'],kmf);
- colocar(['atividade','atividade realizada'],atividade);
-
- botao.innerText='🎤 Comando de voz';
-};
-
-rec.onerror=function(){botao.innerText='🎤 Comando de voz';};
-rec.onend=function(){botao.innerText='🎤 Comando de voz';};
-});
-</script></body>
+</body>
 </html>
 """
 
