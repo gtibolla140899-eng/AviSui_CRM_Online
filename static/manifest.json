@@ -1,0 +1,15 @@
+{
+  "name": "AviSui CRM",
+  "short_name": "AviSui",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111111",
+  "theme_color": "#b30000",
+  "icons": [
+    {
+      "src": "/static/avisui-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

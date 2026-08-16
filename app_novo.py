@@ -79,7 +79,7 @@ th{color:#ddd}
 .filtros{display:grid;gap:10px}
 .total{font-size:18px;font-weight:bold;margin:15px 0}
 </style>
-</head>
+<link rel="manifest" href="/static/manifest.json"><link rel="icon" href="/static/avisui-icon.svg" type="image/svg+xml"><meta name="theme-color" content="#b30000"></head>
 <style>
 :root{--red:#ed1b2f;--dark:#07080a;--panel:#111318;--panel2:#181a20;--line:#292d35}
 *{box-sizing:border-box}

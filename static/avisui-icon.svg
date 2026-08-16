@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<rect width="512" height="512" rx="100" fill="#111111"/>
+<rect x="25" y="25" width="462" height="462" rx="85" fill="none" stroke="#b30000" stroke-width="25"/>
+<text x="256" y="310" text-anchor="middle" font-family="Arial,sans-serif" font-size="145" font-weight="bold" fill="white">Avi</text>
+<text x="256" y="410" text-anchor="middle" font-family="Arial,sans-serif" font-size="100" font-weight="bold" fill="#b30000">Sui</text>
+</svg>
