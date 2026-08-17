@@ -1,5 +1,5 @@
 import os
-﻿from flask import Flask, request, redirect, render_template_string, send_file
+from flask import Flask, request, redirect, render_template_string, send_file
 import sqlite3
 from pathlib import Path
 from datetime import datetime
@@ -780,6 +780,93 @@ def excel_alimentacao():
         registros,
         "AviSui_Relatorio_Alimentacao.xlsx"
     )
+
+
+
+@app.route("/visita/editar/<int:id>", methods=["GET", "POST"])
+def editar_visita(id):
+    conn = sqlite3.connect(BANCO)
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    cur.execute("SELECT * FROM visitas WHERE id=?", (id,))
+    registro = cur.fetchone()
+
+    if not registro:
+        conn.close()
+        return "Visita n?o encontrada", 404
+
+    if request.method == "POST":
+        campos = []
+        valores = []
+
+        for campo in ["data", "funcionario", "nome_funcionario", "cliente",
+                      "granja", "cidade", "hora_saida", "hora_chegada",
+                      "km_inicial", "km_final", "atividade",
+                      "atividade_realizada"]:
+            try:
+                if campo in registro.keys():
+                    campos.append(f'"{campo}"=?')
+                    valores.append(request.form.get(campo, ""))
+            except:
+                pass
+
+        if campos:
+            cur.execute(
+                f"UPDATE visitas SET {', '.join(campos)} WHERE id=?",
+                valores + [id]
+            )
+            conn.commit()
+
+        conn.close()
+        return redirect("/relatorio/visitas")
+
+    campos = []
+
+    for campo in registro.keys():
+        if campo == "id":
+            continue
+
+        valor = registro[campo]
+        valor = "" if valor is None else str(valor)
+
+        tipo = "time" if "hora" in campo.lower() else "text"
+
+        campos.append(
+            f'<label>{campo.replace("_"," ").title()}</label>'
+            f'<input type="{tipo}" name="{campo}" value="{valor}">'
+        )
+
+    conn.close()
+
+    return render_template_string("""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>Editar Visita - AviSui CRM</title>
+        <style>
+            body{font-family:Arial;background:#111;color:white;padding:20px}
+            h2{border-bottom:2px solid #d00000;padding-bottom:10px}
+            label{display:block;margin-top:12px;font-weight:bold}
+            input{width:100%;box-sizing:border-box;padding:14px;margin-top:6px;
+                  border-radius:8px;border:1px solid #555;font-size:16px}
+            button{width:100%;padding:15px;margin-top:20px;border:0;
+                   border-radius:8px;background:#d00000;color:white;
+                   font-size:17px;font-weight:bold}
+            a{display:block;text-align:center;margin-top:15px;color:white}
+        </style>
+    </head>
+    <body>
+        <h2>?? Editar Visita</h2>
+        <form method="POST">
+            {{ campos|safe }}
+            <button type="submit">SALVAR ALTERA??ES</button>
+        </form>
+        <a href="/relatorio/visitas">? Voltar para visitas</a>
+    </body>
+    </html>
+    """, campos="\n".join(campos))
 
 if __name__=="__main__":
     print("AviSui CRM iniciado.")
