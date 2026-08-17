@@ -244,11 +244,11 @@ COMANDO DE VOZ
 
 <div class="tabela">
 <table>
-<tr><th>Cliente</th></tr>
+<tr><th>Cliente</th><th>Ações</th></tr>
 {% for c in registros %}
 <tr><td>{{ c['nome'] }}</td></tr>
 {% else %}
-<tr><td>Nenhum cliente cadastrado.</td></tr>
+<tr><td colspan="2">Nenhum cliente cadastrado.</td></tr>
 {% endfor %}
 </table>
 </div>
@@ -502,7 +502,7 @@ r.onend=function(){
 });
 </script>
 
-<script>document.querySelectorAll("table tbody tr").forEach(function(r){var c=r.querySelector("td:first-child");if(c){var id=c.innerText.trim();var td=document.createElement("td");td.innerHTML="<a href=\"/cliente/editar/"+id+"\" style=\"background:#e53935;color:white;padding:6px 10px;border-radius:5px;text-decoration:none\">Alterar</a>";r.appendChild(td);}});</script></body>
+</body>
 </html>
 """
 
@@ -630,6 +630,60 @@ def periodo(tabela, inicio, fim):
         ).fetchall()
     conn.close()
     return registros
+
+
+@app.route("/editar-cliente/<int:id>", methods=["GET", "POST"])
+def editar_cliente(id):
+    conn = conectar()
+    cliente = conn.execute("SELECT * FROM clientes WHERE id=?", (id,)).fetchone()
+
+    if not cliente:
+        conn.close()
+        return "Cliente não encontrado", 404
+
+    if request.method == "POST":
+        conn.execute("""
+            UPDATE clientes
+            SET nome=?, granja=?, cidade=?, telefone=?, observacoes=?
+            WHERE id=?
+        """, (
+            request.form.get("nome", "").strip(),
+            request.form.get("granja", "").strip(),
+            request.form.get("cidade", "").strip(),
+            request.form.get("telefone", "").strip(),
+            request.form.get("observacoes", "").strip(),
+            id
+        ))
+        conn.commit()
+        conn.close()
+        return redirect("/relatorio/clientes")
+
+    conn.close()
+
+    html = """
+    <div class="painel">
+      <h2>✏️ ALTERAR CLIENTE</h2>
+      <form method="POST">
+        <label>Nome do cliente / produtor</label>
+        <input type="text" name="nome" value="{{ cliente['nome'] }}" required>
+
+        <label>Granja</label>
+        <input type="text" name="granja" value="{{ cliente['granja'] or '' }}">
+
+        <label>Cidade</label>
+        <input type="text" name="cidade" value="{{ cliente['cidade'] or '' }}">
+
+        <label>Telefone</label>
+        <input type="text" name="telefone" value="{{ cliente['telefone'] or '' }}">
+
+        <label>Observações</label>
+        <textarea name="observacoes">{{ cliente['observacoes'] or '' }}</textarea>
+
+        <button type="submit">SALVAR ALTERAÇÕES</button>
+      </form>
+    </div>
+    """
+    return render_string(html, "Alterar Cliente", cliente=cliente)
 
 @app.route("/relatorio/clientes")
 def rel_clientes():
@@ -864,7 +918,7 @@ def editar_visita(id):
             <button type="submit">SALVAR ALTERA??ES</button>
         </form>
         <a href="/relatorio/visitas">? Voltar para visitas</a>
-    <script>document.querySelectorAll("table tbody tr").forEach(function(r){var c=r.querySelector("td:first-child");if(c){var id=c.innerText.trim();var td=document.createElement("td");td.innerHTML="<a href=\"/cliente/editar/"+id+"\" style=\"background:#e53935;color:white;padding:6px 10px;border-radius:5px;text-decoration:none\">Alterar</a>";r.appendChild(td);}});</script></body>
+    </body>
     </html>
     """, campos="\n".join(campos))
 
