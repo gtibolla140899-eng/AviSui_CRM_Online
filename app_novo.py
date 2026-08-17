@@ -292,19 +292,19 @@ COMANDO DE VOZ
 <td>{{ r['granja'] }}</td><td>{{ r['cidade'] }}</td>
 <td>{{ r['km_inicial'] }}</td><td>{{ r['km_final'] }}</td>
 <td>{{ r['atividade'] }}</td><td>{{ r['observacoes'] }}</td>
-</tr>
+<td><a class="botao" href="/editar-visita/{{ r['id'] }}">✏️ ALTERAR</a></td></tr>
 {% endfor %}
 
 {% elif pagina == 'combustivel_rel' %}
 <tr><th>Data</th><th>Quilometragem</th><th>Posto</th><th>Cidade</th><th>Litros</th><th>Média</th></tr>
 {% for r in registros %}
-<tr><td>{{ r['data'] }}</td><td>{{ r['quilometragem'] }}</td><td>{{ r['posto'] }}</td><td>{{ r['cidade'] }}</td><td>{{ r['litros'] }}</td><td>{{ r['media'] }}</td></tr>
+<tr><td>{{ r['data'] }}</td><td>{{ r['quilometragem'] }}</td><td>{{ r['posto'] }}</td><td>{{ r['cidade'] }}</td><td>{{ r['litros'] }}</td><td>{{ r['media'] }}</td><td><a class="botao" href="/editar-visita/{{ r['id'] }}">✏️ ALTERAR</a></td></tr>
 {% endfor %}
 
 {% elif pagina == 'alimentacao_rel' %}
 <tr><th>Data</th><th>Documento</th><th>Razão Social</th><th>Conta</th><th>Valor</th><th>Valor a mais</th><th>Descrição</th></tr>
 {% for r in registros %}
-<tr><td>{{ r['data'] }}</td><td>{{ r['documento'] }}</td><td>{{ r['razao_social'] }}</td><td>{{ r['conta_contabil'] }}</td><td>{{ r['valor'] }}</td><td>{{ r['valor_a_mais'] }}</td><td>{{ r['descricao'] }}</td></tr>
+<tr><td>{{ r['data'] }}</td><td>{{ r['documento'] }}</td><td>{{ r['razao_social'] }}</td><td>{{ r['conta_contabil'] }}</td><td>{{ r['valor'] }}</td><td>{{ r['valor_a_mais'] }}</td><td>{{ r['descricao'] }}</td><td><a class="botao" href="/editar-visita/{{ r['id'] }}">✏️ ALTERAR</a></td></tr>
 {% endfor %}
 {% endif %}
 
