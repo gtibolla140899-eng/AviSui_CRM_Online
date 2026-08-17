@@ -1,3 +1,4 @@
+import os
 ﻿from flask import Flask, request, redirect, render_template_string, send_file
 import sqlite3
 from pathlib import Path
