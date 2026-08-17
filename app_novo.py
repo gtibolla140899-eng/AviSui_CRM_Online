@@ -502,7 +502,7 @@ r.onend=function(){
 });
 </script>
 
-</body>
+<script>document.querySelectorAll("table tbody tr").forEach(function(r){var c=r.querySelector("td:first-child");if(c){var id=c.innerText.trim();var td=document.createElement("td");td.innerHTML="<a href=\"/cliente/editar/"+id+"\" style=\"background:#e53935;color:white;padding:6px 10px;border-radius:5px;text-decoration:none\">Alterar</a>";r.appendChild(td);}});</script></body>
 </html>
 """
 
@@ -864,7 +864,7 @@ def editar_visita(id):
             <button type="submit">SALVAR ALTERA??ES</button>
         </form>
         <a href="/relatorio/visitas">? Voltar para visitas</a>
-    </body>
+    <script>document.querySelectorAll("table tbody tr").forEach(function(r){var c=r.querySelector("td:first-child");if(c){var id=c.innerText.trim();var td=document.createElement("td");td.innerHTML="<a href=\"/cliente/editar/"+id+"\" style=\"background:#e53935;color:white;padding:6px 10px;border-radius:5px;text-decoration:none\">Alterar</a>";r.appendChild(td);}});</script></body>
     </html>
     """, campos="\n".join(campos))
 
